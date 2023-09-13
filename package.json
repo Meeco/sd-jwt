@@ -1,7 +1,7 @@
 {
   "name": "sd-jwt",
   "version": "0.0.1",
-  "description": "",
+  "description": "SD-JWT implementation in typescript",
   "source": "src/index.ts",
   "main": "src/index.js",
   "private": true,

@@ -3,6 +3,16 @@ import { decodeSDJWT, unpackSDJWT } from './common';
 import { FORMAT_SEPARATOR, KB_JWT_TYPE_HEADER } from './constants';
 import { VerifySDJWT } from './types';
 
+/**
+ * Verifies base64 encoded SD JWT against issuer's public key
+ * optional verification of aud and nonce
+ *
+ * @param sdJWT base64 url encoded SD JWT
+ * @param getIssuerKey callback to get the sd-jwt issuer's public key
+ * @param expected_aud
+ * @param expected_nonce
+ * @returns decoded SD-JWT with any disclosed claims
+ */
 export const verifySDJWT: VerifySDJWT = async (sdJWT, { getIssuerKey, expected_aud, expected_nonce }) => {
   const { unverifiedInputSdJwt: jwt, disclosures, keyBindingJWT } = decodeSDJWT(sdJWT);
 
