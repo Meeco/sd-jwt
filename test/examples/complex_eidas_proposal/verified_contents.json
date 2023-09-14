@@ -1,0 +1,22 @@
+{
+  "iss": "https://example.com/issuer",
+  "iat": 1683000000,
+  "exp": 1883000000,
+  "verified_claims": {
+    "verification": {
+      "trust_framework": "eidas",
+      "assurance_level": "high",
+      "evidence": [
+        {
+          "type": "electronic_record",
+          "record": {
+            "type": "eu.europa.ec.eudiw.pid.1",
+            "personal_number": "9642-8fe652c8c040"
+          }
+        }
+      ]
+    },
+    "claims": {}
+  },
+  "birth_middle_name": "Lello"
+}

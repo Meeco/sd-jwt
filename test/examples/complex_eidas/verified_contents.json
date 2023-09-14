@@ -1,0 +1,22 @@
+{
+  "iss": "https://example.com/issuer",
+  "iat": 1683000000,
+  "exp": 1883000000,
+  "verified_claims": {
+    "verification": {
+      "trust_framework": "eidas",
+      "assurance_level": "high"
+    },
+    "claims": {
+      "person_unique_identifier":
+        "TINIT-fc0d9684-1bf0-4220-9642-8fe652c8c040",
+      "given_name": "Raffaello",
+      "family_name": "Mascetti",
+      "place_of_birth": {
+        "country": "IT",
+        "locality": "Firenze"
+      }
+    }
+  },
+  "birth_middle_name": "Lello"
+}

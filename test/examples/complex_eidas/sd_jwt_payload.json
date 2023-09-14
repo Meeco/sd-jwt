@@ -1,0 +1,28 @@
+{
+  "iss": "https://example.com/issuer",
+  "iat": 1683000000,
+  "exp": 1883000000,
+  "verified_claims": {
+    "verification": {
+      "_sd": [
+        "51tgHIZYIdvcvgNp8tId5VhI-XgvKHiOH4uyoAWOfI0"
+      ],
+      "trust_framework": "eidas",
+      "assurance_level": "high"
+    },
+    "claims": {
+      "_sd": [
+        "UqQ87jFp23NRl1MaFsOiS5HX5tIkSat2GnlcDQVo8u8",
+        "X6ujCd07Sb5s792rdmPlmDDbvA5ZFoZUcQdy7oaMWAU",
+        "ZGjY6BTgXrIxTSEvQUv4GYZ705nFxfX2QXsAQ8X2atY",
+        "s4f2gugdX88VdFr_doOq53zqS7blfOh_sXaLb7dLXE8"
+      ],
+      "person_unique_identifier":
+        "TINIT-fc0d9684-1bf0-4220-9642-8fe652c8c040",
+      "given_name": "Raffaello",
+      "family_name": "Mascetti"
+    }
+  },
+  "birth_middle_name": "Lello",
+  "_sd_alg": "sha-256"
+}

@@ -1,0 +1,27 @@
+{
+  "iss": "https://example.com/issuer",
+  "iat": 1683000000,
+  "exp": 1883000000,
+  "verified_claims": {
+    "verification": {
+      "_sd": [
+        "0l3klnfwchN7oGzgwrkm7AjCv5N2WP1YyhbtCrfZ0UA"
+      ],
+      "trust_framework": "eidas",
+      "assurance_level": "high"
+    },
+    "claims": {
+      "_sd": [
+        "3qa0g1g-AOya7j2X0HatJjTGuEmeAUGkyyTabzo7QTc",
+        "7MpnrXlI7NYoZXdUSauXij6bUTDKyxFks0E1mpwWn1s",
+        "AEQpeAgKsxaUZ0_WxQyxTqzlsSXYB75eoSH4V5b6jiU",
+        "Cp5m8WP2dTy592_7HS8hu8hDNJQ-N_bt4xL7BfT1Ynk",
+        "V6aQBCLhCPp8XSacOdXFai3Lwe4ztcvifu7PfEAJLEA",
+        "Y7DvB0q5GgeXUjyC3Z-pNG9fhDCAEqz_oGEKgMIk9gk",
+        "bPAOXB36E4MUxC5Ogrpc8Qv_df_PXObsQHpSeWJbcKc"
+      ]
+    }
+  },
+  "birth_middle_name": "Lello",
+  "_sd_alg": "sha-256"
+}

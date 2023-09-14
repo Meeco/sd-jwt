@@ -1,0 +1,26 @@
+{
+  "iss": "https://example.com",
+  "iat": 1683000000,
+  "exp": 1883000000,
+  "cnf": {
+    "jwk": {
+      "kty": "RSA",
+      "n": "0vx7agoebGcQSu....-csFCur-kEgU8awapJzKnqDKgw",
+      "e": "AQAB"
+    }
+  },
+  "type": "IdentityCredential",
+  "credentialSubject": {
+    "_sd": [
+      "-GDp0p3e_rDj-z5FLW0ZFhOnzkJwOkzxMLkmXs9dHb4",
+      "I00fcFUoDXCucp5yy2ujqPssDVGaWNiUliNz_awD0gc",
+      "MiR4jjp3819sIr-zsAOOxiDcEDMEq6PS0lrlsCByUFs",
+      "N0dSQEtb6o8SnlwWQw6NyDHVXtXHdMjSVtnA6CbIQ5E",
+      "NJ2zkOW0kt4ewVxMCtLNdkE6xdwS2fu1ZOnog9y3bnw",
+      "SQOZ4bdkv2mUisnuXKzF7UYneOt7RtpW6N8f-khbd_s",
+      "gXV5w2QJZEfBLSvtDD8_85yvgCDYgaMochiAxPL5uaQ",
+      "xhqMTg9vB0cIvoQySAyZfX_LqFfeUJWKMcs_uJMuqO4"
+    ]
+  },
+  "_sd_alg": "sha-256"
+}

@@ -1,0 +1,59 @@
+{
+  "iss": "https://example.com/issuer",
+  "iat": 1683000000,
+  "exp": 1883000000,
+  "sub": "john_doe_42",
+  "nationalities": [
+    "CA",
+    "DE"
+  ],
+  "is_over": {
+    "18": false
+  },
+  "addresses": [
+    {
+      "street": "123 Main St",
+      "city": "Anytown",
+      "state": "NY",
+      "zip": "12345",
+      "type": "main_address"
+    }
+  ],
+  "null_values": [
+    null,
+    null
+  ],
+  "data_types": [
+    null,
+    42,
+    3.14,
+    "foo",
+    true,
+    [
+      "Test"
+    ],
+    {
+      "foo": "bar"
+    }
+  ],
+  "nested_array": [
+    [
+      "foo"
+    ],
+    [
+      "qux"
+    ]
+  ],
+  "array_with_recursive_sd": [
+    "boring",
+    []
+  ],
+  "cnf": {
+    "jwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "TCAER19Zvu3OHF4j4W4vfSVoHIP1ILilDls7vCeGemc",
+      "y": "ZxjiWWbZMQGHVWKVQ4hbSIirsVfuecCE6t4jT9F2HZQ"
+    }
+  }
+}

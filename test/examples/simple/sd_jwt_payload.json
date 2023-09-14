@@ -1,0 +1,23 @@
+{
+  "_sd": [
+    "4HBn6aIY3WtuGGWTx-qUj6cdk6WBpZygltdFavPa7LY",
+    "8sm1QCf021pNnHACI5sP4m4KZgyNOOAYcTj9HNaC1wY",
+    "SDN79NLpAnHPmkrdeYdEa89XZdsk0M8DKYSQOU2ZxQc",
+    "XzFrzwscM6Gn6CJDc6vVK8BkMnfG8vOSKfpPIZdAfdE",
+    "gbOsI4Edq2x2Kw-w5wPEzakob9hV1cRD0ATN3oQL9JM",
+    "jMCXVz--9b8x37YcoDfXQinzw1wZcccfFRBCFGqdG2o",
+    "oKI1Gd2fwN5WwvjlFkohidGvim-31OulR3q0hrDO078"
+  ],
+  "iss": "https://example.com/issuer",
+  "iat": 1683000000,
+  "exp": 1883000000,
+  "_sd_alg": "sha-256",
+  "cnf": {
+    "jwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "TCAER19Zvu3OHF4j4W4vfSVoHIP1ILilDls7vCeGemc",
+      "y": "ZxjiWWbZMQGHVWKVQ4hbSIirsVfuecCE6t4jT9F2HZQ"
+    }
+  }
+}

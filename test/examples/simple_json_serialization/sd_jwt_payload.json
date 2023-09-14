@@ -1,0 +1,111 @@
+{
+  "_sd": [
+    "sGmV2tSLHmJScETevXgTQ-bM7O5ZnQuu-ypqI2vB-JU"
+  ],
+  "iss": "https://example.com/issuer",
+  "iat": 1683000000,
+  "exp": 1883000000,
+  "sub": "john_doe_42",
+  "nationalities": [
+    {
+      "...": "i7eKdHc_ZMOnhiyu3TJj5GVDQ7ZwJOMXFD3XgUbo8GQ"
+    },
+    {
+      "...": "usWXFPKaqKMreTrj72QD24wB8xc7lQ4zCnrnn8ZRVeo"
+    },
+    "DE"
+  ],
+  "is_over": {
+    "_sd": [
+      "2ovMJR_ZNMB6ngFK3SUQnRIgyM548DzR7tJFTO-ZzBM",
+      "CeVqxVUVHpva5Xp0X-NeUvhixjDYp7PTZ4BaFWGXUek",
+      "dg1pBJV-dABilqD2RYiG8z4gRtuDFdRBdlwHgdLFEx8"
+    ]
+  },
+  "addresses": [
+    {
+      "street": "123 Main St",
+      "city": "Anytown",
+      "state": "NY",
+      "zip": "12345",
+      "type": "main_address"
+    },
+    {
+      "...": "RNWcxPD8A1ZhAm6_wAiJSoSzIRb_w1QUaKGvS240K-Y"
+    }
+  ],
+  "null_values": [
+    null,
+    {
+      "...": "hhB5pziS4s0dSx0kql31vDtuo3JVDfB4VZ-YHcj2A9M"
+    },
+    {
+      "...": "o_VFRluA190wrH5E1yr2r39UyTnx3-m3qPREikSr6Qo"
+    },
+    null
+  ],
+  "data_types": [
+    {
+      "...": "nY72P6V5uHQe-BYkwYj-paG2y3fmj614FKQQhhk6T1E"
+    },
+    {
+      "...": "zt7kWPtZTpMYKPoaQd-L71L-aKYMYYNLOFOf-yH3uLY"
+    },
+    {
+      "...": "K1yxHJ4z10JKd2jRmQuziCym3D1oXB0NaFVLHEOv8XM"
+    },
+    {
+      "...": "yr-1NDhAaFYPvLrAzvdFfBwRJS_wn199JX0adDYa6Ak"
+    },
+    {
+      "...": "NoTOTjWq1_cYu3kfQKh3jWrx9OLSIIdhYX0_92-RD-Y"
+    },
+    {
+      "...": "biBLCP424CoDYTpBmden-zGmYOdE0GSHlerSaoYeQZ0"
+    },
+    {
+      "...": "_z-We_gbvKo84jpuhBQS9v9yVhDo2--FCDNWMHMezUQ"
+    }
+  ],
+  "nested_array": [
+    [
+      {
+        "...": "FbJ_W_M-Gl9rMUR8fcsMFdiHV-qEabiT-u9eHvNKSAA"
+      },
+      {
+        "...": "zo6muzFQJ9UCeFuy3Dq_YInQzLGimJVIztHGntWVxw0"
+      }
+    ],
+    [
+      {
+        "...": "n-TOQDur9EA2k9G_VVqlvkOYCzIFb28LKA99IaQfFt8"
+      },
+      {
+        "...": "xvJ7NwhRY93UqhcqVKF-Ap7HwZpKe1raEWZg_WozBBs"
+      }
+    ]
+  ],
+  "array_with_recursive_sd": [
+    "boring",
+    {
+      "...": "KIK9FOQ3C-jLxGW9oRYTL-AETF3eGolP8lyVRVFOqX8"
+    },
+    [
+      {
+        "...": "uN8DYtT68Do3MAO9deTagWZx-akgd6DmzI4x9xFN7bs"
+      },
+      {
+        "...": "F5STX6452Aw9VQyFh5vclX-SlUAuu_r_ax-ow35e4Jw"
+      }
+    ]
+  ],
+  "_sd_alg": "sha-256",
+  "cnf": {
+    "jwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "TCAER19Zvu3OHF4j4W4vfSVoHIP1ILilDls7vCeGemc",
+      "y": "ZxjiWWbZMQGHVWKVQ4hbSIirsVfuecCE6t4jT9F2HZQ"
+    }
+  }
+}

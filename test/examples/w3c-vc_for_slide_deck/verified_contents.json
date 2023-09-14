@@ -1,0 +1,14 @@
+{
+  "iss": "https://example.com",
+  "iat": 1683000000,
+  "exp": 1883000000,
+  "cnf": {
+    "jwk": {
+      "kty": "RSA",
+      "n": "0vx7agoebGcQSu....-csFCur-kEgU8awapJzKnqDKgw",
+      "e": "AQAB"
+    }
+  },
+  "type": "IdentityCredential",
+  "credentialSubject": {}
+}
