@@ -48,6 +48,15 @@ export async function loadVerifiedContents(name) {
   return JSON.parse(sdjwt);
 }
 
+export async function loadKeyBindingJWT(name) {
+  try {
+    const kbjwt = await loadExample(name, Example.KB_JWT_PAYLOAD);
+    return JSON.parse(kbjwt);
+  } catch (e) {
+    return {};
+  }
+}
+
 export const getIssuerKey = async () => {
   return importJWK(ISSUER_PUBLIC_KEY, 'ES256');
 };
