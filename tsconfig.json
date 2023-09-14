@@ -10,7 +10,7 @@
     "target": "es2021",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": ".",
+    "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
@@ -20,4 +20,7 @@
     "noFallthroughCasesInSwitch": false,
   }, 
   "exclude": ["node_modules", "dist"],
+  "paths": {
+    "@sd-jwt/test-utils/*": ["./src/test-utils/*"]
+  }
 }
