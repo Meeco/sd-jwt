@@ -1,7 +1,18 @@
 import { FORMAT_SEPARATOR, SD_DIGEST, SD_HASH_ALG, SD_LIST_PREFIX } from './constants';
-import { DecodeSDJWT, Disclosure, SdDigestHashmap, UnpackSDJWT } from './types';
+import {
+  DecodeSDJWT,
+  Disclosure,
+  DisclosureClaim,
+  DisclosureFrame,
+  Hasher,
+  PackSDJWT,
+  SaltGenerator,
+  SdDigestHashmap,
+  UnpackSDJWT,
+} from './types';
 import { base64url, decodeJwt } from 'jose';
 import * as crypto from 'crypto';
+import { generateSalt } from './helpers';
 
 const decodeDisclosure = (disclosures: string[]): Array<Disclosure> => {
   return disclosures.map((d) => {
@@ -90,7 +101,6 @@ const unpackArray = ({ arr, map }) => {
       if (item[SD_LIST_PREFIX]) {
         const hash = item[SD_LIST_PREFIX];
         const disclosed = map[hash];
-        // Only add item if disclosed
         if (disclosed) {
           unpackedArray.push(disclosed.value);
         }
@@ -113,7 +123,6 @@ const unpackArray = ({ arr, map }) => {
  */
 const unpack = ({ obj, map }) => {
   if (obj instanceof Object) {
-    // If obj is an array, removed undisclosed claims
     if (obj instanceof Array) {
       return unpackArray({ arr: obj, map });
     }
@@ -127,14 +136,12 @@ const unpack = ({ obj, map }) => {
     }
 
     if (obj[SD_DIGEST]) {
-      // append disclosure that matches the sd_digest hash into the object
       obj[SD_DIGEST].forEach((hash) => {
         const disclosed = map[hash];
         if (disclosed) {
           obj[disclosed.key] = unpack({ obj: disclosed.value, map });
         }
       });
-      // remove SD_DIGEST property
       delete obj[SD_DIGEST];
     }
   }
@@ -152,7 +159,92 @@ export const unpackSDJWT: UnpackSDJWT = (sdJWT, disclosures) => {
   const hash_alg = getHashAlgorithm(sdJWT);
   const map = createHashMapping(disclosures, hash_alg);
 
-  // remove SD_HASH_ALG property
   delete sdJWT[SD_HASH_ALG];
   return unpack({ obj: sdJWT, map });
+};
+
+const createDisclosure = async (
+  claim: DisclosureClaim,
+  hasher: Hasher,
+  options?: {
+    generateSalt?: SaltGenerator;
+  },
+): Promise<{
+  hash: string;
+  disclosure: string;
+}> => {
+  let disclosureArray;
+  const saltGenerator = options?.generateSalt ? options.generateSalt : generateSalt;
+  const salt = saltGenerator(16);
+  if (claim.key) {
+    disclosureArray = [salt, claim.key, claim.value];
+  } else {
+    disclosureArray = [salt, claim.value];
+  }
+
+  const disclosure = base64url.encode(JSON.stringify(disclosureArray));
+  const hash = await hasher(disclosure);
+  return {
+    hash,
+    disclosure,
+  };
+};
+
+/**
+ * Creates a SD-JWT from claims and disclosureFrame definition
+ *
+ * @param claims
+ * @param disclosureFrame declares which properties to be selectively disclosable
+ * @param hasher
+ * @returns
+ */
+export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, options) => {
+  const sd = disclosureFrame[SD_DIGEST];
+  delete disclosureFrame[SD_DIGEST];
+
+  let disclosures = [];
+  if (disclosureFrame instanceof Array) {
+    for (let i = 0; i < (claims as Array<any>).length; i++) {
+      const df = disclosureFrame[i];
+
+      const packArrayItem = (typeof df === 'boolean' && df) || (typeof df === 'object' && df._self);
+
+      if (df instanceof Object) {
+        const packed = await packSDJWT(claims[i], df, hasher, options);
+        claims[i] = packed.claims;
+        disclosures = disclosures.concat(packed.disclosures);
+      }
+
+      if (packArrayItem) {
+        const value = claims[i];
+        const { hash, disclosure } = await createDisclosure({ value }, hasher, options);
+        claims[i] = { '...': hash };
+        disclosures = disclosures.concat(disclosure);
+      }
+    }
+  } else {
+    // const decoys = disclosureFrame[DF_DECOY_COUNT];
+    // delete disclosureFrame[DF_DECOY_COUNT];
+
+    for (const key in disclosureFrame) {
+      if (key !== '_self') {
+        const packed = await packSDJWT(claims[key], disclosureFrame[key] as DisclosureFrame, hasher, options);
+        claims[key] = packed.claims;
+        disclosures = disclosures.concat(packed.disclosures);
+      }
+    }
+
+    const _sd = [];
+    // if decoys exist, add decoy
+
+    for (const idx in sd) {
+      const key = sd[idx];
+      const { hash, disclosure } = await createDisclosure({ key, value: claims[key] }, hasher, options);
+      _sd.push(hash);
+      disclosures.push(disclosure);
+      delete claims[key];
+    }
+    claims[SD_DIGEST] = _sd;
+  }
+  return { claims, disclosures };
 };
