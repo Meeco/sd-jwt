@@ -100,4 +100,30 @@ describe('packSDJWT', () => {
     expect(result.items).toContainEqual({ '...': expectedHash });
     expect(disclosures).toContain(expectedDisclosure);
   });
+
+  it('should handle invalid inputs', async () => {
+    // Missing claims
+    await expect(packSDJWT(undefined, {}, hasher, {})).rejects.toThrow();
+
+    // Missing disclosure frame
+    await expect(packSDJWT({}, undefined, hasher, {})).rejects.toThrow();
+
+    // @ts-expect-error Invalid claims
+    await expect(packSDJWT(123, {}, hasher, {})).rejects.toThrow();
+
+    // @ts-expect-error Invalid disclosure frame
+    await expect(packSDJWT({}, 123, hasher, {})).rejects.toThrow();
+
+    // Missing hasher
+    await expect(packSDJWT({}, {}, undefined, {})).rejects.toThrow();
+
+    // @ts-expect-error Invalid hasher
+    await expect(packSDJWT({}, {}, 'invalid', {})).rejects.toThrow();
+
+    // @ts-expect-error Missing options
+    await expect(packSDJWT({}, {}, hasher)).rejects.toThrow();
+
+    // @ts-expect-error Invalid options
+    await expect(packSDJWT({}, {}, hasher, 123)).rejects.toThrow();
+  });
 });

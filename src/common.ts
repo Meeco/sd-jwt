@@ -199,6 +199,18 @@ const createDisclosure = async (
  * @returns
  */
 export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, options) => {
+  if (typeof disclosureFrame !== 'object') {
+    throw new Error('disclosureFrame is an invalid format');
+  }
+
+  if (!hasher || typeof hasher !== 'function') {
+    throw new Error('Hasher is required and must be a function');
+  }
+
+  if (!options.generateSalt) {
+    throw new Error('generateSalt is required in options');
+  }
+
   const sd = disclosureFrame[SD_DIGEST];
   delete disclosureFrame[SD_DIGEST];
 
