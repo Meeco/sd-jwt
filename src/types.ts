@@ -22,12 +22,44 @@ export interface SdDigestHashmap {
   [sd_digest: string]: Disclosure;
 }
 
+export interface DisclosureClaim {
+  key?: string;
+  value: any;
+}
+
+export type ArrayDisclosureFrame = Array<boolean | DisclosureFrame>;
+
+export type DisclosureFrame = {
+  [key: string]: DisclosureFrame | ArrayDisclosureFrame | unknown;
+  _sd?: Array<string>;
+  _self?: boolean;
+};
+
+export type PackedClaims = {
+  _sd?: Array<string>;
+  [key: string]: any | unknown;
+};
+
+export type Hasher = (data: string) => Promise<string>;
+export type SaltGenerator = (size) => string;
 /**
  * Exported functions
  */
 export type DecodeSDJWT = (sdJWT: string) => SDJWT;
 
 export type UnpackSDJWT = (sdJWT: SDJWTPayload, disclosures: Array<Disclosure>) => SDJWTPayload;
+
+export type PackSDJWT = (
+  claims: object | Array<any>,
+  disclosureFrame: DisclosureFrame | ArrayDisclosureFrame,
+  hasher: Hasher,
+  options: {
+    generateSalt?: SaltGenerator;
+  },
+) => Promise<{
+  claims: PackedClaims;
+  disclosures: Array<string>;
+}>;
 
 type GetIssuerKeyCallback = (issuer: string) => Promise<KeyLike | Uint8Array>;
 

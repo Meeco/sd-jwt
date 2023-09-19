@@ -1,4 +1,6 @@
-import { decodeSDJWT, unpackSDJWT } from './common';
+import { base64url } from 'jose';
+import * as crypto from 'crypto';
+import { decodeSDJWT, packSDJWT, unpackSDJWT } from './common';
 import {
   getExamples,
   loadIssuedSDJWT,
@@ -34,5 +36,68 @@ describe('unpackSDJWT', () => {
     const { unverifiedInputSdJwt, disclosures } = decodeSDJWT(sdjwt);
     const result = unpackSDJWT(unverifiedInputSdJwt, disclosures);
     expect(result).toEqual(expectedSDJWT);
+  });
+});
+
+describe('packSDJWT', () => {
+  let hasher;
+  let generateSalt;
+
+  beforeAll(() => {
+    hasher = (data) => {
+      const digest = crypto.createHash('sha256').update(data).digest().toString();
+      const hash = base64url.encode(digest);
+      return Promise.resolve(hash);
+    };
+
+    generateSalt = () => 'salt';
+  });
+
+  it('should be able to pack a simple claim', async () => {
+    const claims = { id: 123 };
+    const disclosureFrame = { _sd: ['id'] };
+    const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
+
+    const disclosureArray = ['salt', 'id', 123];
+    const expectedDisclosure = base64url.encode(JSON.stringify(disclosureArray));
+
+    expect(disclosures.length).toEqual(1);
+    expect(disclosures[0]).toEqual(expectedDisclosure);
+
+    const expectedHash = await hasher(expectedDisclosure);
+    expect(result).toEqual({ _sd: [expectedHash] });
+  });
+
+  it('should be able to pack an array', async () => {
+    const claims = { items: [1, 2, 3] };
+    const disclosureFrame = { items: [true, true, false] };
+    const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
+
+    const disclosureArray = ['salt', 1];
+    const expectedDisclosure = base64url.encode(JSON.stringify(disclosureArray));
+
+    expect(disclosures.length).toEqual(2);
+    expect(disclosures).toContain(expectedDisclosure);
+
+    const expectedHash = await hasher(expectedDisclosure);
+    const expectedResult = { '...': expectedHash };
+    expect(result.items).toContainEqual(expectedResult);
+  });
+
+  it('should be able to recursively pack an array', async () => {
+    const claims = { items: [1, 2, { id: 123 }] };
+    const disclosureFrame = { items: [true, false, { _sd: ['id'], _self: true }] };
+    const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
+
+    const disclosureArray = ['salt', 'id', 123];
+    const disclosure = base64url.encode(JSON.stringify(disclosureArray));
+    const hashedDisclosure = await hasher(disclosure);
+
+    const recursiveDisclosure = ['salt', { _sd: [hashedDisclosure] }];
+    const expectedDisclosure = base64url.encode(JSON.stringify(recursiveDisclosure));
+    const expectedHash = await hasher(expectedDisclosure);
+
+    expect(result.items).toContainEqual({ '...': expectedHash });
+    expect(disclosures).toContain(expectedDisclosure);
   });
 });
