@@ -10,13 +10,13 @@ import {
   SdDigestHashmap,
   UnpackSDJWT,
 } from './types';
-import { base64url, decodeJwt } from 'jose';
+import { decodeJwt } from 'jose';
 import * as crypto from 'crypto';
-import { generateSalt } from './helpers';
+import { generateSalt, base64decode, base64encode } from './helpers';
 
 const decodeDisclosure = (disclosures: string[]): Array<Disclosure> => {
   return disclosures.map((d) => {
-    const decoded = JSON.parse(base64url.decode(d).toString());
+    const decoded = JSON.parse(base64decode(d));
 
     let key;
     let value;
@@ -83,7 +83,7 @@ const createHashMapping = (disclosures: Disclosure[], hash_alg: string): SdDiges
   const map = {};
   disclosures.forEach((d) => {
     const digest = crypto.createHash(hash_alg).update(d.disclosure).digest();
-    map[base64url.encode(digest)] = d;
+    map[base64encode(digest)] = d;
   });
   return map;
 };
@@ -182,7 +182,7 @@ const createDisclosure = async (
     disclosureArray = [salt, claim.value];
   }
 
-  const disclosure = base64url.encode(JSON.stringify(disclosureArray));
+  const disclosure = base64encode(JSON.stringify(disclosureArray));
   const hash = await hasher(disclosure);
   return {
     hash,
@@ -202,46 +202,56 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
   if (typeof disclosureFrame !== 'object') {
     throw new Error('disclosureFrame is an invalid format');
   }
+  if (!disclosureFrame) {
+    throw new Error('no disclosureFrame found');
+  }
 
   if (!hasher || typeof hasher !== 'function') {
     throw new Error('Hasher is required and must be a function');
   }
 
-  if (!options.generateSalt) {
-    throw new Error('generateSalt is required in options');
+  if (!claims || typeof claims !== 'object') {
+    throw new Error('no claims found');
   }
 
   const sd = disclosureFrame[SD_DIGEST];
-  delete disclosureFrame[SD_DIGEST];
 
+  let packedClaims;
   let disclosures = [];
-  if (disclosureFrame instanceof Array) {
-    for (let i = 0; i < (claims as Array<any>).length; i++) {
-      const df = disclosureFrame[i];
 
-      const packArrayItem = (typeof df === 'boolean' && df) || (typeof df === 'object' && df._self);
+  if (claims instanceof Array) {
+    packedClaims = [];
 
-      if (df instanceof Object) {
-        const packed = await packSDJWT(claims[i], df, hasher, options);
-        claims[i] = packed.claims;
+    const recursivelyPackedClaims = {};
+    for (const key in disclosureFrame) {
+      if (key !== SD_DIGEST) {
+        const idx = parseInt(key);
+        const packed = await packSDJWT(claims[idx], disclosureFrame[idx] as DisclosureFrame, hasher, options);
+        recursivelyPackedClaims[idx] = packed.claims;
         disclosures = disclosures.concat(packed.disclosures);
       }
+    }
 
-      if (packArrayItem) {
-        const value = claims[i];
-        const { hash, disclosure } = await createDisclosure({ value }, hasher, options);
-        claims[i] = { '...': hash };
-        disclosures = disclosures.concat(disclosure);
+    for (let i = 0; i < (claims as Array<any>).length; i++) {
+      const claim = recursivelyPackedClaims[i] ? recursivelyPackedClaims[i] : claims[i];
+      if (sd?.includes(i)) {
+        const { hash, disclosure } = await createDisclosure({ value: claim }, hasher, options);
+        packedClaims.push({ '...': hash });
+        disclosures.push(disclosure);
+      } else {
+        packedClaims.push(claim);
       }
     }
   } else {
+    packedClaims = {};
     // const decoys = disclosureFrame[DF_DECOY_COUNT];
     // delete disclosureFrame[DF_DECOY_COUNT];
 
+    const recursivelyPackedClaims = {};
     for (const key in disclosureFrame) {
-      if (key !== '_self') {
+      if (key !== SD_DIGEST) {
         const packed = await packSDJWT(claims[key], disclosureFrame[key] as DisclosureFrame, hasher, options);
-        claims[key] = packed.claims;
+        recursivelyPackedClaims[key] = packed.claims;
         disclosures = disclosures.concat(packed.disclosures);
       }
     }
@@ -249,14 +259,20 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
     const _sd = [];
     // if decoys exist, add decoy
 
-    for (const idx in sd) {
-      const key = sd[idx];
-      const { hash, disclosure } = await createDisclosure({ key, value: claims[key] }, hasher, options);
-      _sd.push(hash);
-      disclosures.push(disclosure);
-      delete claims[key];
+    for (const key in claims) {
+      const claim = recursivelyPackedClaims[key] ? recursivelyPackedClaims[key] : claims[key];
+      if (sd?.includes(key)) {
+        const { hash, disclosure } = await createDisclosure({ key, value: claim }, hasher, options);
+        _sd.push(hash);
+        disclosures.push(disclosure);
+      } else {
+        packedClaims[key] = claim;
+      }
     }
-    claims[SD_DIGEST] = _sd;
+
+    if (_sd.length > 0) {
+      packedClaims[SD_DIGEST] = _sd;
+    }
   }
-  return { claims, disclosures };
+  return { claims: packedClaims, disclosures };
 };
