@@ -55,8 +55,8 @@ const {claims: packed, disclosures} = await packSDJWT(claims, disclosureFrame, h
 packed =  {
   "name": "Jane Doe",
   "_sd": [
-    "au-_vVPvv71K77-9z5Dvv70c77-9LO-_vTDvv73vv71n77-9BWDvv702HVZ077-977-9SADvv71J",
-    "77-977-9fO-_ve-_vRfvv73vv70JeWNm77-9Fu-_vWLvv70S1Kvvv73vv73vv71Y77-9Oh5-EgBG"
+      "DZkUdg_W43hB25uuSxEyt2ialCeDbweHVXcRrhQHbLY",
+      "85kfxIj8lWd5WODcupbDiYEw6upYWoD1GI048JUVAHw"
   ]
 }
 

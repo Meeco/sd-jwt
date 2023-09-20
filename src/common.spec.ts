@@ -41,7 +41,7 @@ describe('unpackSDJWT', () => {
 
 describe('packSDJWT', () => {
   const hasher = (data) => {
-    const digest = crypto.createHash('sha256').update(data).digest().toString();
+    const digest = crypto.createHash('sha256').update(data).digest();
     const hash = base64encode(digest);
     return Promise.resolve(hash);
   };

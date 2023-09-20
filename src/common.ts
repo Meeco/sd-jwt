@@ -71,7 +71,7 @@ export const decodeSDJWT: DecodeSDJWT = (sdJWT) => {
  */
 const getHashAlgorithm = (sdJWT: any): string => {
   let hash_alg;
-  switch (sdJWT[SD_HASH_ALG].toLowerCase()) {
+  switch (sdJWT[SD_HASH_ALG]?.toLowerCase()) {
     case 'sha-256':
     default:
       hash_alg = 'sha256';
