@@ -65,3 +65,82 @@ disclosures = [
   "WyJxZEt6MURIVDRlOHBpWlZ5IiwiaWQiLCIxMjM0Il0"
 ]
 ```
+
+## Selective Disclosable items in array
+
+```js
+const claims = {
+  items: ['a', 'b', 'c'] 
+};
+
+const disclosureFrame = {
+  items: { _sd: 1 } // item at index 1
+}
+
+const {claims: packedClaims, disclosures} = await packSDJWT(claims, disclosureFrame, hasher);
+
+// Results
+packedClaims = {
+  items: [
+    'a', 
+    {
+      "...": "b64encodedhash" 
+    },
+    'c'
+  ]
+}
+
+disclosures = [
+  "WyJzYWx0IiwgMV0=" // b64 encoded [salt, 1]
+]
+```
+
+## Combinations
+
+```js
+const claims = {
+  arrayInArray: [[1, 2], [3, 4]],
+  objectInArray: [{id: 1}, {id: 2}],
+  combo: [[1, {id: 2}], [{id:3}, 4]]
+};
+
+const disclosureFrame = {
+  arrayInArray: {
+    0: { _sd: [0] },
+    1: { _sd: [1] }
+  },
+  objectInArray: [
+    {_sd: ['id']}, 
+    {_sd: ['id']}
+  ],
+  combo: {
+    0: {
+      _sd: [0],
+      1: { _sd: ['id'] }
+    },
+    1: {
+      0: { _sd: ['id'] }
+    }
+  }
+};
+
+const {claims: packedClaims, disclosures} = await packSDJWT(claims, disclosureFrame, hasher);
+
+// packedClaims
+{
+  arrayInArray: [[{...: 'abc123'}, 2], [3, {...: 'def456'}]],
+  objectInArray: [{_sd: ['xyz789']}, {_sd: ['uvw012']}], 
+  combo: [[{...: 'ghi345'}, {_sd: ['jkl678']}], [{_sd: ['mno901']}, 4]]
+}
+
+// disclosures 
+[
+  'abc123', // arrayInArray[0][0]
+  'def456', // arrayInArray[1][1]
+  'xyz789', // objectInArray[0].id
+  'uvw012', // objectInArray[1].id
+  'ghi345', // combo[0][0] 
+  'jkl678', // combo[0][1].id
+  'mno901', // combo[1][0].id
+]
+```

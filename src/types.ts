@@ -27,12 +27,10 @@ export interface DisclosureClaim {
   value: any;
 }
 
-export type ArrayDisclosureFrame = Array<boolean | DisclosureFrame>;
-
+type ArrayIndex = number;
 export type DisclosureFrame = {
-  [key: string]: DisclosureFrame | ArrayDisclosureFrame | unknown;
-  _sd?: Array<string>;
-  _self?: boolean;
+  [key: string | ArrayIndex]: DisclosureFrame | unknown;
+  _sd?: Array<string | ArrayIndex>;
 };
 
 export type PackedClaims = {
@@ -51,7 +49,7 @@ export type UnpackSDJWT = (sdJWT: SDJWTPayload, disclosures: Array<Disclosure>) 
 
 export type PackSDJWT = (
   claims: object | Array<any>,
-  disclosureFrame: DisclosureFrame | ArrayDisclosureFrame,
+  disclosureFrame: DisclosureFrame,
   hasher: Hasher,
   options: {
     generateSalt?: SaltGenerator;
