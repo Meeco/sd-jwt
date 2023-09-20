@@ -24,3 +24,19 @@ export enum Example {
 }
 
 export const INVALID_JWT = 'INVALID_JWT_EXAMPLE';
+
+export const ISSUER_KEYPAIR = {
+  PUBLIC_KEY_JWK: {
+    kty: 'EC',
+    x: 'QxM0mbg6Ow3zTZZjKMuBv-Be_QsGDfRpPe3m1OP90zk',
+    y: 'aR-Qm7Ckg9TmtcK9-miSaMV2_jd4rYq6ZsFRNb8dZ2o',
+    crv: 'P-256',
+  },
+  PRIVATE_KEY_JWK: {
+    kty: 'EC',
+    x: 'QxM0mbg6Ow3zTZZjKMuBv-Be_QsGDfRpPe3m1OP90zk',
+    y: 'aR-Qm7Ckg9TmtcK9-miSaMV2_jd4rYq6ZsFRNb8dZ2o',
+    crv: 'P-256',
+    d: 'fWfGrvu1tUqnyYHrdlpZiBsxkMoeim3EleoPEafV_yM',
+  },
+};
