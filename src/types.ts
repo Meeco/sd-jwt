@@ -1,4 +1,4 @@
-import { JWK, JWTPayload, KeyLike } from 'jose';
+import { JWK, JWTHeaderParameters, JWTPayload, KeyLike } from 'jose';
 
 export interface SDJWTPayload extends JWTPayload {
   cnf?: {
@@ -40,6 +40,19 @@ export type PackedClaims = {
 
 export type Hasher = (data: string) => Promise<string>;
 export type SaltGenerator = (size) => string;
+
+export interface IssueSDJWTOptions {
+  header?: JWTHeaderParameters;
+  payload: JWTPayload;
+  disclosureFrame: DisclosureFrame;
+  alg: string;
+  getHasher: (hash_alg: string) => Promise<Hasher>;
+  hash_alg?: string;
+  generateSalt?: SaltGenerator;
+  getIssuerPrivateKey: () => Promise<KeyLike | Uint8Array>;
+  holderPublicKey?: JWK;
+}
+
 /**
  * Exported functions
  */
@@ -70,3 +83,5 @@ export type VerifySDJWT = (
   sdJWT: string,
   { getIssuerKey, expected_aud, expected_nonce }: VerifySdJwtOptions,
 ) => Promise<SDJWTPayload>;
+
+export type IssueSDJWT = (options: IssueSDJWTOptions) => Promise<string>;
