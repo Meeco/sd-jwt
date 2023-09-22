@@ -1,4 +1,7 @@
 {
+  "files": [
+    "./src/index.ts"
+  ],
   "compilerOptions": {
     "module": "commonjs",
     "declaration": true,
@@ -9,7 +12,7 @@
     "esModuleInterop": true,
     "target": "es2021",
     "sourceMap": true,
-    "outDir": "./dist",
+    "outDir": "./dev",
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
@@ -20,7 +23,4 @@
     "noFallthroughCasesInSwitch": false,
   }, 
   "exclude": ["node_modules", "dist"],
-  "paths": {
-    "@sd-jwt/test-utils/*": ["./src/test-utils/*"]
-  }
 }
