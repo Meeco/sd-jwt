@@ -1,7 +1,7 @@
 import { JWTHeaderParameters, SignJWT } from 'jose';
-import { packSDJWT } from './common';
-import { FORMAT_SEPARATOR, SD_JWT_TYPE } from './constants';
-import { IssueSDJWT } from './types';
+import { packSDJWT } from './common.js';
+import { FORMAT_SEPARATOR, SD_JWT_TYPE } from './constants.js';
+import { IssueSDJWT } from './types.js';
 
 export const issueSDJWT: IssueSDJWT = async ({
   header,

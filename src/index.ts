@@ -1,3 +1,3 @@
-export * from './common';
-export * from './verifier';
-export * from './issuer';
+export * from './common.js';
+export * from './verifier.js';
+export * from './issuer.js';
