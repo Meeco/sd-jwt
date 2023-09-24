@@ -4,6 +4,7 @@ export interface SDJWTPayload extends JWTPayload {
   cnf?: {
     jwk: JWK;
   };
+  iss?: string;
 }
 
 export interface Disclosure {
