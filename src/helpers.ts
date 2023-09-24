@@ -1,5 +1,3 @@
-import { base64url } from 'jose';
-
 export function generateSalt(length: number): string {
   let salt = '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -9,10 +7,10 @@ export function generateSalt(length: number): string {
   return salt;
 }
 
-export function base64encode(str: string | Uint8Array): string {
-  return base64url.encode(str);
+export function base64encode(input: string | Uint8Array): string {
+  return Buffer.from(input).toString('base64url');
 }
 
-export function base64decode(str: string): string {
-  return base64url.decode(str).toString();
+export function base64decode(input: string): string {
+    return Buffer.from(input, 'base64url').toString();
 }

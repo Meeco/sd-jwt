@@ -1,4 +1,4 @@
-import { FORMAT_SEPARATOR, SD_DIGEST, SD_HASH_ALG, SD_LIST_PREFIX } from './constants.js';
+import { FORMAT_SEPARATOR, SD_DIGEST, SD_HASH_ALG, SD_LIST_PREFIX } from './constants';
 import {
   DecodeSDJWT,
   Disclosure,
@@ -12,7 +12,7 @@ import {
 } from './types.js';
 import { decodeJwt } from 'jose';
 import * as crypto from 'crypto';
-import { generateSalt, base64decode, base64encode } from './helpers.js';
+import { generateSalt, base64decode, base64encode } from './helpers';
 
 const decodeDisclosure = (disclosures: string[]): Array<Disclosure> => {
   return disclosures.map((d) => {
