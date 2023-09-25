@@ -28,19 +28,14 @@ describe('issueSDJWT', () => {
       _sd: ['id', 'items'],
     };
 
-    const result = await issueSDJWT(
-      { alg: 'ES256' },
-      payload,
-      disclosureFrame,
-      {
-        hash: {
-          alg: 'sha-256',
-          callback: hasher,
-        },
-        signer,
-        generateSalt
-      }
-    );
+    const result = await issueSDJWT({ alg: 'ES256' }, payload, disclosureFrame, {
+      hash: {
+        alg: 'sha-256',
+        callback: hasher,
+      },
+      signer,
+      generateSalt,
+    });
 
     const expectedHeader = 'eyJ0eXAiOiJzZCtqd3QiLCJhbGciOiJFUzI1NiJ9';
     const expectedPayload =

@@ -259,7 +259,7 @@ describe('packSDJWT', () => {
     expect(disc5.length).toEqual(13);
     expect(disc5).toEqual(expect.arrayContaining(disc4));
 
-    expect(result._sd.length).toEqual(3);
+    expect(result?._sd?.length).toEqual(3);
   });
 
   it('should handle invalid inputs', async () => {
