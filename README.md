@@ -100,6 +100,44 @@ const sdjwt = await issueSDJWT(header, payload, disclosureFrame, {
 "WyJ2NEVHUzhKRzlTdW9TUjVGIiwibmFtZSIsIkpvaG4gRG9lIl0" // base64url encode of ["v4EGS8JG9SuoSR5F","name","John Doe"]
 ```
 
+
+## verifySDJWT Examples
+
+The `verifySDJWT` function takes a Compact combined SD-JWT (include optional disclosures & KB-JWT) 
+and a verifier function.
+Returns SD-JWT with all the disclosed claims.
+
+### Basic Usage
+Example Using `jose` lib for verifier;
+
+```js
+import { importJWK, jwtVerify } from 'jose';
+
+const verifier = async (jwt) => {
+  const key = await getIssuerKey(); // Get SD-JWT issuer public key
+  return jwtVerify(jwt, key);
+};
+
+const keyBindingVerifier = (kbjwt, holderJWK) => {
+  // check against kb-jwt.aud && kb-jwt.nonce
+  const { header } = decodeJWT(kbjwt);
+  const holderKey = await importJWK(holderJWK, header.alg);
+  const verifiedKbJWT = await jwtVerify(kbjwt, holderKey);
+  return !!verifiedKbJWT;
+}
+
+const opts = {
+  kb: {
+    verifier: keyBindingVerifier
+  }
+}
+try {
+  const sdJWTwithDisclosedClaims = await verifySDJWT(compactSDJWT, verifier, opts);
+} catch (e) {
+  console.log('Could not verify SD-JWT', e);
+}
+```
+
 ## packSDJWT Examples
 
 The `packSDJWT` function takes a claims object and disclosure frame and returns packed claims with selective disclosures encrypted.
