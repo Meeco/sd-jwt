@@ -38,9 +38,9 @@ This is an implementation of [SD-JWT (I-D version 05)](https://www.ietf.org/arch
   - [ ] Publish on npm
 
 
-## issueSDJWT Examples
+## issueSDJWT Example
 
-The `issueSDJWT` function takes a JWT header, payload, and disclosure frame and returns a compact SD-JWT combined with the disclosures.
+The `issueSDJWT` function takes a JWT header, payload, and disclosure frame and returns a compact SD-JWT combined with the disclosures.  
 Requires a signer and hasher function to be provided
 
 ### Basic Usage
@@ -101,14 +101,17 @@ const sdjwt = await issueSDJWT(header, payload, disclosureFrame, {
 ```
 
 
-## verifySDJWT Examples
+## verifySDJWT Example
 
-The `verifySDJWT` function takes a Compact combined SD-JWT (include optional disclosures & KB-JWT) 
-and a verifier function.
+The `verifySDJWT` function takes a Compact combined SD-JWT (include optional disclosures & KB-JWT)  
+**Required**: a verifier function that can verify the JWT signature  
+**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload  
+*Optional*: A Keybinding Verifier function that can verify the embedded holder key  
 Returns SD-JWT with all the disclosed claims.
 
 ### Basic Usage
-Example Using `jose` lib for verifier;
+Example Using `jose` lib for verifier  
+Uses `crypto` for Hasher;
 
 ```js
 import { importJWK, jwtVerify } from 'jose';
@@ -126,17 +129,70 @@ const keyBindingVerifier = (kbjwt, holderJWK) => {
   return !!verifiedKbJWT;
 }
 
+const getHasher = (hashAlg) => {
+  let hasher;
+  // Default Hasher = Hasher for SHA-256
+  if (!hashAlg || hashAlg.toLowerCase() === 'sha-256') {
+    hasher = (data) => {
+      const digest = crypto.createHash('sha256').update(data).digest();
+      return base64encode(digest);
+    };
+  }
+  return Promise.resolve(hasher);
+};
+
 const opts = {
   kb: {
     verifier: keyBindingVerifier
   }
 }
 try {
-  const sdJWTwithDisclosedClaims = await verifySDJWT(compactSDJWT, verifier, opts);
+  const sdJWTwithDisclosedClaims = await verifySDJWT(compactSDJWT, verifier, getHasher, opts);
 } catch (e) {
   console.log('Could not verify SD-JWT', e);
 }
 ```
+
+## unpackSDJWT Example
+
+The `unpackSDJWT` function takes a SD-JWT payload with _sd digests, array of disclosures and returns the disclosed claims  
+**Required**: a sd-jwt payload with `_sd` digests  
+**Required**: an array of Disclosure objects  
+**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload  
+
+### Basic Usage
+
+```js
+import * as crypto from 'crypto';
+
+const getHasher = (hashAlg) => {
+  let hasher;
+  // Default Hasher = Hasher for SHA-256
+  if (!hashAlg || hashAlg.toLowerCase() === 'sha-256') {
+    hasher = (data) => {
+      const digest = crypto.createHash('sha256').update(data).digest();
+      return base64encode(digest);
+    };
+  }
+  return Promise.resolve(hasher);
+};
+
+const disclosures = [{
+  disclosure: 'disclosure_array_as_string', // [<salt>, <key>, <value>]
+  key: 'key_of_disclosed_claim',
+  value: 'value_of_disclosed_claim'
+}]
+
+const sdjwt = {
+  _sd: [
+    'SD_DIGEST_1', 
+    'SD_DIGEST_2',
+  ]
+}
+
+const result = await unpackSDJWT(sdjwt, disclosures, getHasher);
+```
+
 
 ## packSDJWT Examples
 

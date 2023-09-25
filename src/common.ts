@@ -138,7 +138,7 @@ const unpack = ({ obj, map }) => {
  * Replaces _sd digests present in the SD-JWT with disclosed claims
  *
  * @param sdJWT SD-JWT
- * @param disclosures hash map of disclosures
+ * @param disclosures Array of Disclosure
  * @returns sd-jwt with all disclosed claims
  */
 export const unpackSDJWT: UnpackSDJWT = async (sdJWT, disclosures, getHasher) => {
