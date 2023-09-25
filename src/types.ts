@@ -48,6 +48,7 @@ export type PackedClaims = {
 export type Signer = (header: JWTHeaderParameters, payload: JWTPayload) => Promise<string>;
 export type Hasher = (data: string) => Promise<string>;
 export type Verifier = (data: string) => Promise<boolean>;
+export type KeyBindingVerifier = (data: string, key: JWK) => Promise<boolean>;
 export type SaltGenerator = (size) => string;
 
 export interface IssueSDJWTOptions {
@@ -62,7 +63,7 @@ export interface IssueSDJWTOptions {
 
 export interface VerifySdJwtOptions {
   kb?: {
-    verifier?: Verifier;
+    verifier?: KeyBindingVerifier;
     skipCheck?: boolean;
   }
 }

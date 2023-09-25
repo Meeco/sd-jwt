@@ -25,12 +25,12 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, opts) => {
 
   if (opts && opts.kb) {
     const kb = opts.kb;
-    if (!kb.skipCheck) {
-      const holderPublicKey = jwt.cnf?.jwk;
-      if (!holderPublicKey) {
-        throw new Error('No holder public key in SD-JWT');
-      }
+    const holderPublicKey = jwt.cnf?.jwk;
+    if (!holderPublicKey) {
+      throw new Error('No holder public key in SD-JWT');
+    }
 
+    if (!kb.skipCheck) {
       if (!keyBindingJWT) {
         throw new Error('No Key Binding JWT found');
       }
@@ -52,7 +52,7 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, opts) => {
         throw new Error('Invalid KB_JWT verifier function');
       }
       try {
-        const verifiedKBJWT = await kb.verifier(keyBindingJWT);
+        const verifiedKBJWT = await kb.verifier(keyBindingJWT, holderPublicKey);
         if (!verifiedKBJWT) {
           throw new Error('KB JWT is invalid');
         }

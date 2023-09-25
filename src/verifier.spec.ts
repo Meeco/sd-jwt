@@ -18,8 +18,8 @@ const examples = getExamples();
 describe('verifySDJWT', () => {
   let verifier;
 
-  const getKbVerifier = async (holderJWK, expectedAud, expectedNonce) => {
-    return async (kbjwt) => {
+  const getKbVerifier = async (expectedAud, expectedNonce) => {
+    return async (kbjwt, holderJWK) => {
       const { header, payload } = decodeJWT(kbjwt);
 
       if (expectedAud || expectedNonce) {
@@ -52,10 +52,9 @@ describe('verifySDJWT', () => {
     let opts;
     const kbjwtExist = !!kbjwt && typeof kbjwt === 'object' && Object.keys(kbjwt).length > 0;
     if (expectedResult.cnf && kbjwtExist) {
-      const holderJWK = expectedResult.cnf.jwk;
       opts = {
         kb: {
-          verifier: await getKbVerifier(holderJWK, kbjwt.aud, kbjwt.nonce),
+          verifier: await getKbVerifier(kbjwt.aud, kbjwt.nonce),
         },
       };
     }
@@ -77,12 +76,10 @@ describe('verifySDJWT', () => {
 
   it('should error when checking with an incorrect nonce', async () => {
     const example = EXAMPLE_WITH_KEY_BINDING;
-    const expectedResult = await loadVerifiedContents(example);
     const sdjwt = await loadPresentation(example);
 
-    const holderJWK = expectedResult.cnf.jwk;
     const kbOpts: VerifySdJwtOptions['kb'] = {
-      verifier: await getKbVerifier(holderJWK, 'invalid_aud', 'invalid_nonce')
+      verifier: await getKbVerifier('invalid_aud', 'invalid_nonce'),
     };
     expect(async () => {
       await verifySDJWT(sdjwt, verifier, { kb: kbOpts });
