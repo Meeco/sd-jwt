@@ -27,12 +27,16 @@
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
+      "bun": "./dist/browser/index.js",
+      "browser": "./dist/browser/index.js",
+      "worker": "./dist/browser/index.js",
       "import": "./dist/node/esm/index.js",
       "require": "./dist/node/cjs/index.js"
     },
     "./package.json": "./package.json"
   },
   "main": "./dist/node/cjs/index.js",
+  "browser": "./dist/browser/index.js",
   "types": "./dist/types/index.d.ts",
   "author": "Meeco",
   "devDependencies": {
