@@ -1,20 +1,14 @@
 {
-  "files": [
-    "./src/index.ts"
-  ],
   "compilerOptions": {
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "target": "es2021",
+    "target": "es2022",
     "outDir": "./dev",
     "baseUrl": "./",
     "incremental": true,
-    "skipLibCheck": true,
     "strictNullChecks": false,
     "noImplicitAny": false,
     "strictBindCallApply": false,

@@ -1,6 +1,6 @@
-import * as crypto from 'crypto';
+import crypto from 'crypto';
 import { importJWK, jwtVerify } from 'jose';
-import { verifySDJWT } from './verifier';
+import { base64encode, decodeJWT } from './helpers';
 import {
   getExamples,
   getIssuerKey,
@@ -8,8 +8,8 @@ import {
   loadPresentation,
   loadVerifiedContents,
 } from './test-utils/helpers';
-import { decodeJWT, base64encode } from './helpers';
 import { VerifySdJwtOptions } from './types';
+import { verifySDJWT } from './verifier';
 
 const EXAMPLE_WITH_KEY_BINDING = 'complex_ekyc';
 const EXAMPLE_WITHOUT_KEY_BINDING = 'address_only_recursive';
@@ -31,7 +31,7 @@ const getHasher = (hashAlg) => {
 describe('verifySDJWT', () => {
   let verifier;
 
-  const getKbVerifier = async (expectedAud, expectedNonce) => {
+  const getKbVerifier = (expectedAud, expectedNonce) => {
     return async (kbjwt, holderJWK) => {
       const { header, payload } = decodeJWT(kbjwt);
 
@@ -50,7 +50,7 @@ describe('verifySDJWT', () => {
     };
   };
 
-  beforeAll(async () => {
+  beforeAll(() => {
     verifier = async (jwt) => {
       const key = await getIssuerKey();
       return jwtVerify(jwt, key);
@@ -67,7 +67,7 @@ describe('verifySDJWT', () => {
     if (expectedResult.cnf && kbjwtExist) {
       opts = {
         kb: {
-          verifier: await getKbVerifier(kbjwt.aud, kbjwt.nonce),
+          verifier: getKbVerifier(kbjwt.aud, kbjwt.nonce),
         },
       };
     }
@@ -92,7 +92,7 @@ describe('verifySDJWT', () => {
     const sdjwt = await loadPresentation(example);
 
     const kbOpts: VerifySdJwtOptions['kb'] = {
-      verifier: await getKbVerifier('invalid_aud', 'invalid_nonce'),
+      verifier: getKbVerifier('invalid_aud', 'invalid_nonce'),
     };
     expect(async () => {
       await verifySDJWT(sdjwt, verifier, getHasher, { kb: kbOpts });

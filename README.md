@@ -46,7 +46,7 @@ Requires a signer and hasher function to be provided
 ### Basic Usage
 Example Using `jose` lib for signer function & `crypto` for hasher;
 ```js
-import * as crypto from 'crypto'
+import crypto from 'crypto'
 import { SignJWT, importJWK } from 'jose';
 
 const header = {
@@ -163,7 +163,7 @@ The `unpackSDJWT` function takes a SD-JWT payload with _sd digests, array of dis
 ### Basic Usage
 
 ```js
-import * as crypto from 'crypto';
+import crypto from 'crypto';
 
 const getHasher = (hashAlg) => {
   let hasher;

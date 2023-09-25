@@ -1,8 +1,8 @@
-import * as crypto from 'crypto';
-import { base64encode } from './helpers';
-import { ISSUER_KEYPAIR } from './test-utils/params';
-import { issueSDJWT } from './issuer';
+import crypto from 'crypto';
 import { SignJWT, importJWK } from 'jose';
+import { base64encode } from './helpers';
+import { issueSDJWT } from './issuer';
+import { ISSUER_KEYPAIR } from './test-utils/params';
 
 describe('issueSDJWT', () => {
   const hasher = (data) => {

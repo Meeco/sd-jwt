@@ -141,16 +141,16 @@ export const unpack = ({ obj, map }) => {
 /**
  * Helpers for packSDJWT
  */
-export const createDisclosure = async (
+export const createDisclosure = (
   claim: DisclosureClaim,
   hasher: Hasher,
   options?: {
     generateSalt?: SaltGenerator;
   },
-): Promise<{
+): {
   hash: string;
   disclosure: string;
-}> => {
+} => {
   let disclosureArray;
   const saltGenerator = options?.generateSalt ? options.generateSalt : generateSalt;
   const salt = saltGenerator(16);
