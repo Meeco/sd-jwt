@@ -39,19 +39,18 @@ export type PackedClaims = {
   [key: string]: any | unknown;
 };
 
+export type Signer = (header: JWTHeaderParameters, payload: JWTPayload) => Promise<string>;
 export type Hasher = (data: string) => Promise<string>;
 export type SaltGenerator = (size) => string;
 
 export interface IssueSDJWTOptions {
-  header?: JWTHeaderParameters;
-  payload: JWTPayload;
-  disclosureFrame: DisclosureFrame;
-  alg: string;
-  getHasher: (hash_alg: string) => Promise<Hasher>;
-  hash_alg?: string;
+  signer: Signer;
+  hash: {
+    alg: string;
+    callback: Hasher;
+  };
+  cnf?: { jwk: JWK };
   generateSalt?: SaltGenerator;
-  getIssuerPrivateKey: () => Promise<KeyLike | Uint8Array>;
-  holderPublicKey?: JWK;
 }
 
 /**
@@ -85,4 +84,9 @@ export type VerifySDJWT = (
   { getIssuerKey, expected_aud, expected_nonce }: VerifySdJwtOptions,
 ) => Promise<SDJWTPayload>;
 
-export type IssueSDJWT = (options: IssueSDJWTOptions) => Promise<string>;
+export type IssueSDJWT = (
+  header: JWTHeaderParameters,
+  payload: JWTPayload,
+  disclosureFrame: DisclosureFrame,
+  opts: IssueSDJWTOptions,
+) => Promise<string>;

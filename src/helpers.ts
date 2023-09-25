@@ -12,5 +12,5 @@ export function base64encode(input: string | Uint8Array): string {
 }
 
 export function base64decode(input: string): string {
-    return Buffer.from(input, 'base64url').toString();
+  return Buffer.from(input, 'base64url').toString();
 }
