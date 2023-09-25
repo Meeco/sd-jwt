@@ -45,8 +45,13 @@ export type PackedClaims = {
   [key: string]: any | unknown;
 };
 
+/**
+ * A simple hash function that takes the base64url encoded variant of the disclosure and MUST return a base64url encoded version of the digest
+ */
+export type Hasher = (data: string) => string;
+export type GetHasher = (hashAlg: string) => Promise<Hasher>;
+
 export type Signer = (header: JWTHeaderParameters, payload: JWTPayload) => Promise<string>;
-export type Hasher = (data: string) => Promise<string>;
 export type Verifier = (data: string) => Promise<boolean>;
 export type KeyBindingVerifier = (data: string, key: JWK) => Promise<boolean>;
 export type SaltGenerator = (size) => string;
@@ -65,14 +70,22 @@ export interface VerifySdJwtOptions {
   kb?: {
     verifier?: KeyBindingVerifier;
     skipCheck?: boolean;
-  }
+  };
 }
 /**
  * Exported functions
  */
+
 export type DecodeSDJWT = (sdJWT: string) => SDJWT;
 
-export type UnpackSDJWT = (sdJWT: SDJWTPayload, disclosures: Array<Disclosure>) => SDJWTPayload;
+/**
+ * Unpacks SD-JWT with selective disclosures and returns a JWT with disclosed Claims
+ */
+export type UnpackSDJWT = (
+  sdJWT: SDJWTPayload,
+  disclosures: Array<Disclosure>,
+  getHasher: GetHasher,
+) => Promise<SDJWTPayload>;
 
 export type PackSDJWT = (
   claims: object | Array<any>,
@@ -86,7 +99,12 @@ export type PackSDJWT = (
   disclosures: Array<string>;
 }>;
 
-export type VerifySDJWT = (sdjwt: string, verifier: Verifier, opts?: VerifySdJwtOptions) => Promise<SDJWTPayload>;
+export type VerifySDJWT = (
+  sdjwt: string,
+  verifier: Verifier,
+  getHasher: GetHasher,
+  opts?: VerifySdJwtOptions,
+) => Promise<SDJWTPayload>;
 
 export type IssueSDJWT = (
   header: JWTHeaderParameters,

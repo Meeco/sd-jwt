@@ -29,12 +29,24 @@ describe('decodeSDJWT', () => {
 });
 
 describe('unpackSDJWT', () => {
+  const getHasher = (hashAlg) => {
+    let hasher;
+    // Default Hasher = Hasher for SHA-256
+    if (!hashAlg || hashAlg.toLowerCase() === 'sha-256') {
+      hasher = (data) => {
+        const digest = crypto.createHash('sha256').update(data).digest();
+        return base64encode(digest);
+      };
+    }
+    return Promise.resolve(hasher);
+  };
+
   it.each(examples)('should unpack %s', async (example) => {
     const sdjwt = await loadPresentation(example);
     const expectedSDJWT = await loadVerifiedContents(example);
 
     const { unverifiedInputSdJwt, disclosures } = decodeSDJWT(sdjwt);
-    const result = unpackSDJWT(unverifiedInputSdJwt, disclosures);
+    const result = await unpackSDJWT(unverifiedInputSdJwt, disclosures, getHasher);
     expect(result).toEqual(expectedSDJWT);
   });
 });
@@ -42,15 +54,14 @@ describe('unpackSDJWT', () => {
 describe('packSDJWT', () => {
   const hasher = (data) => {
     const digest = crypto.createHash('sha256').update(data).digest();
-    const hash = base64encode(digest);
-    return Promise.resolve(hash);
+    return base64encode(digest);
   };
 
   const generateSalt = () => 'salt';
 
   const createDisclosure = async (array) => {
     const disclosure = base64encode(JSON.stringify(array));
-    const hash = await hasher(disclosure);
+    const hash = hasher(disclosure);
     return {
       hash,
       disclosure,

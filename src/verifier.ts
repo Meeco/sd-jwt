@@ -12,13 +12,17 @@ import { decodeJWT } from './helpers';
  * @param opts Optional keybinding verifier
  * @returns SD-JWT with any disclosed claims
  */
-export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, opts) => {
+export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts) => {
   if (typeof sdjwt !== 'string') {
     throw new Error('Invalid SD-JWT input - expects a compact SD-JWT as string');
   }
 
   if (!verifier && typeof verifier !== 'function') {
     throw new Error('Verifier function is required');
+  }
+
+  if (!getHasher && typeof getHasher !== 'function') {
+    throw new Error('GetHasher function is requred');
   }
 
   const { unverifiedInputSdJwt: jwt, disclosures, keyBindingJWT } = decodeSDJWT(sdjwt);
@@ -73,5 +77,5 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, opts) => {
     throw new Error('Failed to verify SD-JWT');
   }
 
-  return unpackSDJWT(jwt, disclosures);
+  return unpackSDJWT(jwt, disclosures, getHasher);
 };

@@ -1,3 +1,5 @@
+import * as crypto from 'crypto';
+import { importJWK, jwtVerify } from 'jose';
 import { verifySDJWT } from './verifier';
 import {
   getExamples,
@@ -6,14 +8,25 @@ import {
   loadPresentation,
   loadVerifiedContents,
 } from './test-utils/helpers';
-import { importJWK, jwtVerify } from 'jose';
-import { decodeJWT } from './helpers';
+import { decodeJWT, base64encode } from './helpers';
 import { VerifySdJwtOptions } from './types';
 
 const EXAMPLE_WITH_KEY_BINDING = 'complex_ekyc';
 const EXAMPLE_WITHOUT_KEY_BINDING = 'address_only_recursive';
 
 const examples = getExamples();
+
+const getHasher = (hashAlg) => {
+  let hasher;
+  // Default Hasher = Hasher for SHA-256
+  if (!hashAlg || hashAlg.toLowerCase() === 'sha-256') {
+    hasher = (data) => {
+      const digest = crypto.createHash('sha256').update(data).digest();
+      return base64encode(digest);
+    };
+  }
+  return Promise.resolve(hasher);
+};
 
 describe('verifySDJWT', () => {
   let verifier;
@@ -58,7 +71,7 @@ describe('verifySDJWT', () => {
         },
       };
     }
-    const result = await verifySDJWT(sdjwt, verifier, opts);
+    const result = await verifySDJWT(sdjwt, verifier, getHasher, opts);
     expect(result).toEqual(expectedResult);
   });
 
@@ -70,7 +83,7 @@ describe('verifySDJWT', () => {
       verifier: () => Promise.resolve(true),
     };
     expect(async () => {
-      await verifySDJWT(sdjwt, verifier, { kb: kbOpts });
+      await verifySDJWT(sdjwt, verifier, getHasher, { kb: kbOpts });
     }).toThrowError;
   });
 
@@ -82,7 +95,7 @@ describe('verifySDJWT', () => {
       verifier: await getKbVerifier('invalid_aud', 'invalid_nonce'),
     };
     expect(async () => {
-      await verifySDJWT(sdjwt, verifier, { kb: kbOpts });
+      await verifySDJWT(sdjwt, verifier, getHasher, { kb: kbOpts });
     }).toThrowError;
   });
 });

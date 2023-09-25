@@ -7,8 +7,7 @@ import { SignJWT, importJWK } from 'jose';
 describe('issueSDJWT', () => {
   const hasher = (data) => {
     const digest = crypto.createHash('sha256').update(data).digest();
-    const hash = base64encode(digest);
-    return Promise.resolve(hash);
+    return base64encode(digest);
   };
 
   const generateSalt = () => 'salt';
