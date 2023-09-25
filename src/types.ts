@@ -1,4 +1,10 @@
-import { JWK, JWTHeaderParameters, JWTPayload, KeyLike } from 'jose';
+import { JWK, JWTHeaderParameters, JWTPayload } from 'jose';
+
+export interface UnverifiedJWT {
+  header: JWTHeaderParameters;
+  payload: JWTPayload;
+  signature: string;
+}
 
 export interface SDJWTPayload extends JWTPayload {
   cnf?: {
@@ -41,6 +47,7 @@ export type PackedClaims = {
 
 export type Signer = (header: JWTHeaderParameters, payload: JWTPayload) => Promise<string>;
 export type Hasher = (data: string) => Promise<string>;
+export type Verifier = (data: string) => Promise<boolean>;
 export type SaltGenerator = (size) => string;
 
 export interface IssueSDJWTOptions {
@@ -53,6 +60,12 @@ export interface IssueSDJWTOptions {
   generateSalt?: SaltGenerator;
 }
 
+export interface VerifySdJwtOptions {
+  kb?: {
+    verifier?: Verifier;
+    skipCheck?: boolean;
+  }
+}
 /**
  * Exported functions
  */
@@ -72,17 +85,7 @@ export type PackSDJWT = (
   disclosures: Array<string>;
 }>;
 
-type GetIssuerKeyCallback = (issuer: string) => Promise<KeyLike | Uint8Array>;
-
-interface VerifySdJwtOptions {
-  getIssuerKey: GetIssuerKeyCallback;
-  expected_aud?: string;
-  expected_nonce?: string;
-}
-export type VerifySDJWT = (
-  sdJWT: string,
-  { getIssuerKey, expected_aud, expected_nonce }: VerifySdJwtOptions,
-) => Promise<SDJWTPayload>;
+export type VerifySDJWT = (sdjwt: string, verifier: Verifier, opts?: VerifySdJwtOptions) => Promise<SDJWTPayload>;
 
 export type IssueSDJWT = (
   header: JWTHeaderParameters,
