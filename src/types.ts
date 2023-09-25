@@ -82,7 +82,7 @@ export type DecodeSDJWT = (sdJWT: string) => SDJWT;
  * Unpacks SD-JWT with selective disclosures and returns a JWT with disclosed Claims
  */
 export type UnpackSDJWT = (
-  sdJWT: SDJWTPayload,
+  sdjwt: SDJWTPayload,
   disclosures: Array<Disclosure>,
   getHasher: GetHasher,
 ) => Promise<SDJWTPayload>;

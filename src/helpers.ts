@@ -122,15 +122,18 @@ export const unpack = ({ obj, map }) => {
       }
     }
 
-    if (obj[SD_DIGEST]) {
-      obj[SD_DIGEST].forEach((hash) => {
+    const { _sd, ...payload } = obj;
+    const claims = {};
+    if (_sd) {
+      _sd.forEach((hash) => {
         const disclosed = map[hash];
         if (disclosed) {
-          obj[disclosed.key] = unpack({ obj: disclosed.value, map });
+          claims[disclosed.key] = unpack({ obj: disclosed.value, map });
         }
       });
-      delete obj[SD_DIGEST];
     }
+
+    return Object.assign(payload, claims);
   }
   return obj;
 };

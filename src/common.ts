@@ -35,13 +35,13 @@ export const decodeSDJWT: DecodeSDJWT = (sdJWT) => {
  * @param disclosures Array of Disclosure
  * @returns sd-jwt with all disclosed claims
  */
-export const unpackSDJWT: UnpackSDJWT = async (sdJWT, disclosures, getHasher) => {
-  const hashAlg = (sdJWT[SD_HASH_ALG] as string) || DEFAULT_SD_HASH_ALG;
+export const unpackSDJWT: UnpackSDJWT = async (sdjwt, disclosures, getHasher) => {
+  const hashAlg = (sdjwt[SD_HASH_ALG] as string) || DEFAULT_SD_HASH_ALG;
   const hasher = await getHasher(hashAlg);
   const map = createHashMapping(disclosures, hasher);
 
-  delete sdJWT[SD_HASH_ALG];
-  return unpack({ obj: sdJWT, map });
+  const { _sd_alg, ...payload } = sdjwt;
+  return unpack({ obj: payload, map });
 };
 
 /**
