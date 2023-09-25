@@ -53,6 +53,7 @@ export const unpackSDJWT: UnpackSDJWT = async (sdjwt, disclosures, getHasher) =>
  * @returns
  */
 export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, options) => {
+  // TODO: check for correct object type for disclosureFrame
   if (typeof disclosureFrame !== 'object') {
     throw new Error('disclosureFrame is an invalid format');
   }
