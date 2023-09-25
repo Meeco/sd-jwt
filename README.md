@@ -38,6 +38,68 @@ This is an implementation of [SD-JWT (I-D version 05)](https://www.ietf.org/arch
   - [ ] Publish on npm
 
 
+## issueSDJWT Examples
+
+The `issueSDJWT` function takes a JWT header, payload, and disclosure frame and returns a compact SD-JWT combined with the disclosures.
+Requires a signer and hasher function to be provided
+
+### Basic Usage
+Example Using `jose` lib for signer function & `crypto` for hasher;
+```js
+import * as crypto from 'crypto'
+import { SignJWT, importJWK } from 'jose';
+
+const header = {
+  alg: 'ES256',
+  kid: 'issuer-key-id'
+};
+
+const payload = {
+  iss: 'https://example.com/issuer',
+  iat: 168300000, 
+  exp: 188300000,
+  sub: 'subject-id',
+  name: 'John Doe'
+};
+
+const disclosureFrame = {
+  _sd: ['name']
+};
+
+const signer = async (header, payload) => {
+  const issuerPrivateKey = await importJWK(ISSUER_KEYPAIR.PRIVATE_KEY_JWK, header.alg);
+  return new SignJWT(payload).setProtectedHeader(header).sign(issuerPrivateKey);
+};
+
+const hasher = (data) => {
+  const digest = crypto.createHash('sha256').update(data).digest();
+  const hash = Buffer.from(digest).toString('base64url');
+  return Promise.resolve(hash);
+};
+
+const sdjwt = await issueSDJWT(header, payload, disclosureFrame, {
+  hash: {
+    alg: 'sha-256',
+    callback: hasher,
+  },
+  signer
+});
+
+// Decoded sdjwt.payload
+{
+  iss: 'https://example.com/issuer',
+  iat: 168300000, 
+  exp: 188300000,
+  sub: 'subject-id',
+  _sd: [
+    'jlJfq0qqkvwwgPrHh6kfzO2p7hpDYX1Mve-62bHgpHE' // HASH Digest of disclosure
+  ]
+}
+
+// Disclosure
+"WyJ2NEVHUzhKRzlTdW9TUjVGIiwibmFtZSIsIkpvaG4gRG9lIl0" // base64url encode of ["v4EGS8JG9SuoSR5F","name","John Doe"]
+```
+
 ## packSDJWT Examples
 
 The `packSDJWT` function takes a claims object and disclosure frame and returns packed claims with selective disclosures encrypted.
