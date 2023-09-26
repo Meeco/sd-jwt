@@ -1,0 +1,9 @@
+{
+  "name": "sd-jwt-demo",
+  "version": "0.0.1",
+  "description": "sd-jwt-demo",
+  "scripts": {
+    "issue": "node issue.js",
+    "verify": "node verify.js"
+  }
+}
