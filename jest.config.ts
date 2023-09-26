@@ -13,13 +13,6 @@ const config: Config = {
   },
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: './coverage',
-  extensionsToTreatAsEsm: ['.ts'],
-  globals: {
-    'ts-jest': {
-      useESM: true,
-    },
-    FormData: null,
-  },
   coveragePathIgnorePatterns: ['/node_modules/', '/src/test-utils/'],
   moduleNameMapper: {
     '^(\\.\\/.+)\\.js$': '$1',
