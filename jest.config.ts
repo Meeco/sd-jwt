@@ -13,15 +13,16 @@ const config: Config = {
   },
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: './coverage',
+  extensionsToTreatAsEsm: ['.ts'],
   globals: {
-    /**
-     * Because @meeco/sdk expects it...
-     */
+    'ts-jest': {
+      useESM: true,
+    },
     FormData: null,
   },
   coveragePathIgnorePatterns: ['/node_modules/', '/src/test-utils/'],
   moduleNameMapper: {
-    '^@sd-jwt/test-utils(.*)$': '<rootDir>/src/test-utils/$1',
+    '^(\\.\\/.+)\\.js$': '$1',
   },
 };
 
