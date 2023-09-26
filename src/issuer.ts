@@ -1,7 +1,7 @@
-import { packSDJWT } from './common';
-import { FORMAT_SEPARATOR, SD_JWT_TYPE } from './constants';
-import { IssueSDJWT } from './types';
-import { base64encode } from './helpers';
+import { packSDJWT } from './common.js';
+import { FORMAT_SEPARATOR, SD_JWT_TYPE } from './constants.js';
+import { IssueSDJWT } from './types.js';
+import { base64encode } from './helpers.js';
 
 export const issueSDJWT: IssueSDJWT = async (header, payload, disclosureFrame, { signer, hash, generateSalt, cnf }) => {
   if (!signer || typeof signer !== 'function') {
