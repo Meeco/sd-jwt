@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { base64encode } from './helpers';
 import { ISSUER_KEYPAIR } from './test-utils/params';
 import { issueSDJWT } from './issuer';

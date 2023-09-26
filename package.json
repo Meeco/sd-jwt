@@ -3,10 +3,16 @@
   "version": "0.0.1",
   "description": "SD-JWT implementation in typescript",
   "source": "src/index.ts",
-  "main": "src/index.js",
   "private": true,
   "scripts": {
     "build": "tsc",
+    "build-all": "npm-run-all clear build:*",
+    "build:browser": "tsc -b ./tsconfig/browser.json && echo '{\"type\": \"module\"}'> dist/browser/package.json",
+    "build:browser-bundle-min": "esbuild --minify --bundle dist/browser/index.js --platform=node --format=esm --target=es2018 --outfile=dist/browser/index.bundle.min.js",
+    "build:node-cjs": "tsc -b ./tsconfig/node-cjs.json",
+    "build:node-esm": "tsc -b ./tsconfig/node-esm.json && echo '{\"type\": \"module\"}'> dist/node/esm/package.json",
+    "build:types": "tsc -b ./tsconfig/types.json",
+    "clear": "rm -Rf ./dist",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "lint:check": "eslint \"{src,test}/**/*.ts\"",
     "test": "jest --verbose"
@@ -18,15 +24,31 @@
   "keywords": [
     "sd-jwt"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "bun": "./dist/browser/index.js",
+      "browser": "./dist/browser/index.js",
+      "worker": "./dist/browser/index.js",
+      "import": "./dist/node/esm/index.js",
+      "require": "./dist/node/cjs/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/node/cjs/index.js",
+  "browser": "./dist/browser/index.js",
+  "types": "./dist/types/index.d.ts",
   "author": "Meeco",
   "devDependencies": {
     "@types/jest": "^29.5.4",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",
+    "esbuild": "^0.19.3",
     "eslint": "^8.49.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
     "jest": "^29.6.4",
+    "npm-run-all": "^4.1.5",
     "prettier": "^3.0.3",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",

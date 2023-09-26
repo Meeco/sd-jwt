@@ -9,7 +9,7 @@ import {
   SaltGenerator,
   SdDigestHashmap,
   UnpackSDJWT,
-} from './types';
+} from './types.js';
 import { decodeJwt } from 'jose';
 import * as crypto from 'crypto';
 import { generateSalt, base64decode, base64encode } from './helpers';
