@@ -4,10 +4,10 @@ This is an implementation of [SD-JWT (I-D version 05)](https://www.ietf.org/arch
 
 ## Functionalities
 
-- Configurable:
-  - [ ] Hasher
-  - [ ] Signer
-  - [ ] Salt Generator
+- No cryptographic dependencies (BYOC):
+  - [x] Hasher
+  - [x] Signer
+  - [x] Salt Generator
 
 - Issue SD-JWT:
   - [x] Support recursive disclosures (parent object and its keys)
@@ -33,18 +33,21 @@ This is an implementation of [SD-JWT (I-D version 05)](https://www.ietf.org/arch
   - [ ] e2e test
 
 - Release:
-  - [ ] Create CommonJS and ESM builds
+  - [x] Create CommonJS and ESM builds
   - [ ] Documentation
   - [ ] Publish on npm
 
 
 ## issueSDJWT Example
 
-The `issueSDJWT` function takes a JWT header, payload, and disclosure frame and returns a compact SD-JWT combined with the disclosures.  
-Requires a signer and hasher function to be provided
+The `issueSDJWT` function takes a JWT header, payload, and disclosure frame and returns a compact SD-JWT combined with the disclosures.
+
+As the library is unopinionated when it comes to how you want to deal with cryptographic functions, so it requires a signer and hasher function to be provided.
 
 ### Basic Usage
+
 Example Using `jose` lib for signer function & `crypto` for hasher;
+
 ```js
 import crypto from 'crypto'
 import { SignJWT, importJWK } from 'jose';
@@ -56,7 +59,7 @@ const header = {
 
 const payload = {
   iss: 'https://example.com/issuer',
-  iat: 168300000, 
+  iat: 168300000,
   exp: 188300000,
   sub: 'subject-id',
   name: 'John Doe'
@@ -88,7 +91,7 @@ const sdjwt = await issueSDJWT(header, payload, disclosureFrame, {
 // Decoded sdjwt.payload
 {
   iss: 'https://example.com/issuer',
-  iat: 168300000, 
+  iat: 168300000,
   exp: 188300000,
   sub: 'subject-id',
   _sd: [
@@ -103,14 +106,15 @@ const sdjwt = await issueSDJWT(header, payload, disclosureFrame, {
 
 ## verifySDJWT Example
 
-The `verifySDJWT` function takes a Compact combined SD-JWT (include optional disclosures & KB-JWT)  
-**Required**: a verifier function that can verify the JWT signature  
-**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload  
-*Optional*: A Keybinding Verifier function that can verify the embedded holder key  
+The `verifySDJWT` function takes a Compact combined SD-JWT (include optional disclosures & KB-JWT)
+**Required**: a verifier function that can verify the JWT signature
+**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload
+*Optional*: A Keybinding Verifier function that can verify the embedded holder key
 Returns SD-JWT with all the disclosed claims.
 
 ### Basic Usage
-Example Using `jose` lib for verifier  
+
+Example Using `jose` lib for verifier
 Uses `crypto` for Hasher;
 
 ```js
@@ -155,10 +159,10 @@ try {
 
 ## unpackSDJWT Example
 
-The `unpackSDJWT` function takes a SD-JWT payload with _sd digests, array of disclosures and returns the disclosed claims  
-**Required**: a sd-jwt payload with `_sd` digests  
-**Required**: an array of Disclosure objects  
-**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload  
+The `unpackSDJWT` function takes a SD-JWT payload with _sd digests, array of disclosures and returns the disclosed claims
+**Required**: a sd-jwt payload with `_sd` digests
+**Required**: an array of Disclosure objects
+**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload
 
 ### Basic Usage
 
@@ -185,7 +189,7 @@ const disclosures = [{
 
 const sdjwt = {
   _sd: [
-    'SD_DIGEST_1', 
+    'SD_DIGEST_1',
     'SD_DIGEST_2',
   ]
 }
