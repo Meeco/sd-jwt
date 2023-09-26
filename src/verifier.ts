@@ -1,7 +1,7 @@
-import { decodeSDJWT, unpackSDJWT } from './common';
-import { FORMAT_SEPARATOR, KB_JWT_TYPE_HEADER } from './constants';
-import { VerifySDJWT } from './types';
-import { decodeJWT } from './helpers';
+import { decodeSDJWT, unpackSDJWT } from './common.js';
+import { FORMAT_SEPARATOR, KB_JWT_TYPE_HEADER } from './constants.js';
+import { VerifySDJWT } from './types.js';
+import { decodeJWT } from './helpers.js';
 
 /**
  * Verifies base64 encoded SD JWT against issuer's public key

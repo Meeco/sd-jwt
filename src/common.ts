@@ -1,7 +1,7 @@
-import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, SD_DIGEST, SD_HASH_ALG } from './constants';
+import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, SD_DIGEST, SD_HASH_ALG } from './constants.js';
 import { DecodeSDJWT, DisclosureFrame, PackSDJWT, UnpackSDJWT } from './types.js';
 import { decodeJwt } from 'jose';
-import { createDisclosure, createHashMapping, decodeDisclosure, unpack } from './helpers';
+import { createDisclosure, createHashMapping, decodeDisclosure, unpack } from './helpers.js';
 
 /**
  * Splits the compact SD-JWT into parts based on the FORMAT_SEPARATOR

@@ -1,5 +1,5 @@
-import { SD_DIGEST, SD_LIST_PREFIX } from './constants';
-import { Disclosure, DisclosureClaim, Hasher, SaltGenerator, SdDigestHashmap, UnverifiedJWT } from './types';
+import { SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
+import { Disclosure, DisclosureClaim, Hasher, SaltGenerator, SdDigestHashmap, UnverifiedJWT } from './types.js';
 
 export function generateSalt(length: number): string {
   let salt = '';
