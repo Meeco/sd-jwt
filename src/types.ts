@@ -1,4 +1,10 @@
-import { JWK, JWTHeaderParameters, JWTPayload, KeyLike } from 'jose';
+import { JWK, JWTHeaderParameters, JWTPayload } from 'jose';
+
+export interface UnverifiedJWT {
+  header: JWTHeaderParameters;
+  payload: JWTPayload;
+  signature: string;
+}
 
 export interface SDJWTPayload extends JWTPayload {
   cnf?: {
@@ -39,27 +45,47 @@ export type PackedClaims = {
   [key: string]: any | unknown;
 };
 
-export type Hasher = (data: string) => Promise<string>;
+/**
+ * A simple hash function that takes the base64url encoded variant of the disclosure and MUST return a base64url encoded version of the digest
+ */
+export type Hasher = (data: string) => string;
+export type GetHasher = (hashAlg: string) => Promise<Hasher>;
+
+export type Signer = (header: JWTHeaderParameters, payload: JWTPayload) => Promise<string>;
+export type Verifier = (data: string) => Promise<boolean>;
+export type KeyBindingVerifier = (data: string, key: JWK) => Promise<boolean>;
 export type SaltGenerator = (size) => string;
 
 export interface IssueSDJWTOptions {
-  header?: JWTHeaderParameters;
-  payload: JWTPayload;
-  disclosureFrame: DisclosureFrame;
-  alg: string;
-  getHasher: (hash_alg: string) => Promise<Hasher>;
-  hash_alg?: string;
+  signer: Signer;
+  hash: {
+    alg: string;
+    callback: Hasher;
+  };
+  cnf?: { jwk: JWK };
   generateSalt?: SaltGenerator;
-  getIssuerPrivateKey: () => Promise<KeyLike | Uint8Array>;
-  holderPublicKey?: JWK;
 }
 
+export interface VerifySdJwtOptions {
+  kb?: {
+    verifier?: KeyBindingVerifier;
+    skipCheck?: boolean;
+  };
+}
 /**
  * Exported functions
  */
+
 export type DecodeSDJWT = (sdJWT: string) => SDJWT;
 
-export type UnpackSDJWT = (sdJWT: SDJWTPayload, disclosures: Array<Disclosure>) => SDJWTPayload;
+/**
+ * Unpacks SD-JWT with selective disclosures and returns a JWT with disclosed Claims
+ */
+export type UnpackSDJWT = (
+  sdjwt: SDJWTPayload,
+  disclosures: Array<Disclosure>,
+  getHasher: GetHasher,
+) => Promise<SDJWTPayload>;
 
 export type PackSDJWT = (
   claims: object | Array<any>,
@@ -73,16 +99,16 @@ export type PackSDJWT = (
   disclosures: Array<string>;
 }>;
 
-type GetIssuerKeyCallback = (issuer: string) => Promise<KeyLike | Uint8Array>;
-
-interface VerifySdJwtOptions {
-  getIssuerKey: GetIssuerKeyCallback;
-  expected_aud?: string;
-  expected_nonce?: string;
-}
 export type VerifySDJWT = (
-  sdJWT: string,
-  { getIssuerKey, expected_aud, expected_nonce }: VerifySdJwtOptions,
+  sdjwt: string,
+  verifier: Verifier,
+  getHasher: GetHasher,
+  opts?: VerifySdJwtOptions,
 ) => Promise<SDJWTPayload>;
 
-export type IssueSDJWT = (options: IssueSDJWTOptions) => Promise<string>;
+export type IssueSDJWT = (
+  header: JWTHeaderParameters,
+  payload: JWTPayload,
+  disclosureFrame: DisclosureFrame,
+  opts: IssueSDJWTOptions,
+) => Promise<string>;

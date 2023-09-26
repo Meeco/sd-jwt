@@ -1,51 +1,13 @@
-import { FORMAT_SEPARATOR, SD_DIGEST, SD_HASH_ALG, SD_LIST_PREFIX } from './constants';
-import {
-  DecodeSDJWT,
-  Disclosure,
-  DisclosureClaim,
-  DisclosureFrame,
-  Hasher,
-  PackSDJWT,
-  SaltGenerator,
-  SdDigestHashmap,
-  UnpackSDJWT,
-} from './types.js';
+import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, SD_DIGEST, SD_HASH_ALG } from './constants';
+import { DecodeSDJWT, DisclosureFrame, PackSDJWT, UnpackSDJWT } from './types.js';
 import { decodeJwt } from 'jose';
-import * as crypto from 'crypto';
-import { generateSalt, base64decode, base64encode } from './helpers';
-
-const decodeDisclosure = (disclosures: string[]): Array<Disclosure> => {
-  return disclosures.map((d) => {
-    const decoded = JSON.parse(base64decode(d));
-
-    let key;
-    let value;
-
-    // if disclosure is a value in an array
-    // [<SALT>, <VALUE>]
-    if (decoded.length == 2) {
-      value = decoded[1];
-    }
-    // if disclosure is a value in an object
-    // [<SALT>, <KEY>, <VALUE>]
-    if (decoded.length == 3) {
-      key = decoded[1];
-      value = decoded[2];
-    }
-
-    return {
-      disclosure: d,
-      key,
-      value,
-    };
-  });
-};
+import { createDisclosure, createHashMapping, decodeDisclosure, unpack } from './helpers';
 
 /**
- * Splits the encoded SD-JWT into parts based on the FORMAT_SEPARATOR
+ * Splits the compact SD-JWT into parts based on the FORMAT_SEPARATOR
  *
- * @param sdJWT base64 url encoded SD-JWT
- * @returns jwt input payload, an array of disclosures and a base64url encoded key binding jwt if present
+ * @param sdJWT Compact SD-JWT with appended disclosures and key binding JWT
+ * @returns jwt input payload, an array of disclosures and a compact key binding jwt if present
  */
 export const decodeSDJWT: DecodeSDJWT = (sdJWT) => {
   const s = sdJWT.split(FORMAT_SEPARATOR);
@@ -67,127 +29,19 @@ export const decodeSDJWT: DecodeSDJWT = (sdJWT) => {
 };
 
 /**
- * Unpacking SD-JWT Claims from Disclosures
- */
-const getHashAlgorithm = (sdJWT: any): string => {
-  let hash_alg;
-  switch (sdJWT[SD_HASH_ALG]?.toLowerCase()) {
-    case 'sha-256':
-    default:
-      hash_alg = 'sha256';
-  }
-  return hash_alg;
-};
-
-const createHashMapping = (disclosures: Disclosure[], hash_alg: string): SdDigestHashmap => {
-  const map = {};
-  disclosures.forEach((d) => {
-    const digest = crypto.createHash(hash_alg).update(d.disclosure).digest();
-    map[base64encode(digest)] = d;
-  });
-  return map;
-};
-
-/**
- * Iterates through an array
- * inserts claim if disclosed
- * removes any undisclosed claims
- */
-const unpackArray = ({ arr, map }) => {
-  const unpackedArray = [];
-  arr.forEach((item) => {
-    if (item instanceof Object) {
-      // if Array item is { '...': <SD_HASH_DIGEST> }
-      if (item[SD_LIST_PREFIX]) {
-        const hash = item[SD_LIST_PREFIX];
-        const disclosed = map[hash];
-        if (disclosed) {
-          unpackedArray.push(disclosed.value);
-        }
-      } else {
-        // unpack recursively
-        unpackedArray.push(unpack({ obj: item, map }));
-      }
-    } else {
-      unpackedArray.push(item);
-    }
-  });
-  return unpackedArray;
-};
-
-/**
- * Iterates through an object
- * recursively unpack any child object or array
- * inserts claims if disclosed
- * removes any undisclosed claims
- */
-const unpack = ({ obj, map }) => {
-  if (obj instanceof Object) {
-    if (obj instanceof Array) {
-      return unpackArray({ arr: obj, map });
-    }
-
-    for (const key in obj) {
-      // if obj property value is an object
-      // recursively unpack
-      if (key !== SD_DIGEST && key !== SD_LIST_PREFIX && obj[key] instanceof Object) {
-        obj[key] = unpack({ obj: obj[key], map });
-      }
-    }
-
-    if (obj[SD_DIGEST]) {
-      obj[SD_DIGEST].forEach((hash) => {
-        const disclosed = map[hash];
-        if (disclosed) {
-          obj[disclosed.key] = unpack({ obj: disclosed.value, map });
-        }
-      });
-      delete obj[SD_DIGEST];
-    }
-  }
-  return obj;
-};
-
-/**
  * Replaces _sd digests present in the SD-JWT with disclosed claims
  *
  * @param sdJWT SD-JWT
- * @param disclosures hash map of disclosures
+ * @param disclosures Array of Disclosure
  * @returns sd-jwt with all disclosed claims
  */
-export const unpackSDJWT: UnpackSDJWT = (sdJWT, disclosures) => {
-  const hash_alg = getHashAlgorithm(sdJWT);
-  const map = createHashMapping(disclosures, hash_alg);
+export const unpackSDJWT: UnpackSDJWT = async (sdjwt, disclosures, getHasher) => {
+  const hashAlg = (sdjwt[SD_HASH_ALG] as string) || DEFAULT_SD_HASH_ALG;
+  const hasher = await getHasher(hashAlg);
+  const map = createHashMapping(disclosures, hasher);
 
-  delete sdJWT[SD_HASH_ALG];
-  return unpack({ obj: sdJWT, map });
-};
-
-const createDisclosure = async (
-  claim: DisclosureClaim,
-  hasher: Hasher,
-  options?: {
-    generateSalt?: SaltGenerator;
-  },
-): Promise<{
-  hash: string;
-  disclosure: string;
-}> => {
-  let disclosureArray;
-  const saltGenerator = options?.generateSalt ? options.generateSalt : generateSalt;
-  const salt = saltGenerator(16);
-  if (claim.key) {
-    disclosureArray = [salt, claim.key, claim.value];
-  } else {
-    disclosureArray = [salt, claim.value];
-  }
-
-  const disclosure = base64encode(JSON.stringify(disclosureArray));
-  const hash = await hasher(disclosure);
-  return {
-    hash,
-    disclosure,
-  };
+  const { _sd_alg, ...payload } = sdjwt;
+  return unpack({ obj: payload, map });
 };
 
 /**
@@ -199,6 +53,7 @@ const createDisclosure = async (
  * @returns
  */
 export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, options) => {
+  // TODO: check for correct object type for disclosureFrame
   if (typeof disclosureFrame !== 'object') {
     throw new Error('disclosureFrame is an invalid format');
   }

@@ -1,5 +1,6 @@
-import * as crypto from 'crypto';
+import crypto from 'crypto';
 import { decodeSDJWT, packSDJWT, unpackSDJWT } from './common';
+import { base64encode } from './helpers';
 import {
   getExamples,
   loadIssuedSDJWT,
@@ -8,7 +9,6 @@ import {
   loadVerifiedContents,
 } from './test-utils/helpers';
 import { INVALID_JWT } from './test-utils/params';
-import { base64encode } from './helpers';
 
 const examples = getExamples();
 
@@ -29,12 +29,24 @@ describe('decodeSDJWT', () => {
 });
 
 describe('unpackSDJWT', () => {
+  const getHasher = (hashAlg) => {
+    let hasher;
+    // Default Hasher = Hasher for SHA-256
+    if (!hashAlg || hashAlg.toLowerCase() === 'sha-256') {
+      hasher = (data) => {
+        const digest = crypto.createHash('sha256').update(data).digest();
+        return base64encode(digest);
+      };
+    }
+    return Promise.resolve(hasher);
+  };
+
   it.each(examples)('should unpack %s', async (example) => {
     const sdjwt = await loadPresentation(example);
     const expectedSDJWT = await loadVerifiedContents(example);
 
     const { unverifiedInputSdJwt, disclosures } = decodeSDJWT(sdjwt);
-    const result = unpackSDJWT(unverifiedInputSdJwt, disclosures);
+    const result = await unpackSDJWT(unverifiedInputSdJwt, disclosures, getHasher);
     expect(result).toEqual(expectedSDJWT);
   });
 });
@@ -42,15 +54,14 @@ describe('unpackSDJWT', () => {
 describe('packSDJWT', () => {
   const hasher = (data) => {
     const digest = crypto.createHash('sha256').update(data).digest();
-    const hash = base64encode(digest);
-    return Promise.resolve(hash);
+    return base64encode(digest);
   };
 
   const generateSalt = () => 'salt';
 
-  const createDisclosure = async (array) => {
+  const createDisclosure = (array) => {
     const disclosure = base64encode(JSON.stringify(array));
-    const hash = await hasher(disclosure);
+    const hash = hasher(disclosure);
     return {
       hash,
       disclosure,
@@ -63,7 +74,7 @@ describe('packSDJWT', () => {
     const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
 
     const disclosureArray = ['salt', 'id', 123];
-    const { hash: expectedHash, disclosure: expectedDisclosure } = await createDisclosure(disclosureArray);
+    const { hash: expectedHash, disclosure: expectedDisclosure } = createDisclosure(disclosureArray);
 
     expect(disclosures.length).toEqual(1);
     expect(disclosures[0]).toEqual(expectedDisclosure);
@@ -78,7 +89,7 @@ describe('packSDJWT', () => {
     const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
 
     const disclosureArray = ['salt', 1];
-    const { hash: expectedHash, disclosure: expectedDisclosure } = await createDisclosure(disclosureArray);
+    const { hash: expectedHash, disclosure: expectedDisclosure } = createDisclosure(disclosureArray);
 
     expect(disclosures.length).toEqual(2);
     expect(disclosures).toContainEqual(expectedDisclosure);
@@ -98,10 +109,10 @@ describe('packSDJWT', () => {
     const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
 
     const disclosureArray = ['salt', 'id', 123];
-    const { hash: hashedDisclosure } = await createDisclosure(disclosureArray);
+    const { hash: hashedDisclosure } = createDisclosure(disclosureArray);
 
     const recursiveDisclosure = ['salt', { _sd: [hashedDisclosure] }];
-    const { hash: expectedHash, disclosure: expectedDisclosure } = await createDisclosure(recursiveDisclosure);
+    const { hash: expectedHash, disclosure: expectedDisclosure } = createDisclosure(recursiveDisclosure);
 
     expect(result.items).toContainEqual(2);
     expect(result.items).toContainEqual({ '...': expectedHash });
@@ -124,7 +135,7 @@ describe('packSDJWT', () => {
     const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
 
     const disclosureArray = ['salt', 'iss', 1];
-    const { hash: expectedHash, disclosure: expectedDisclosure } = await createDisclosure(disclosureArray);
+    const { hash: expectedHash, disclosure: expectedDisclosure } = createDisclosure(disclosureArray);
 
     const expectedResult = {
       items: {
@@ -151,12 +162,12 @@ describe('packSDJWT', () => {
     const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
 
     const arr1 = ['salt', 1];
-    const { hash: hash1 } = await createDisclosure(arr1);
+    const { hash: hash1 } = createDisclosure(arr1);
     const arr2 = ['salt', 2];
-    const { hash: hash2 } = await createDisclosure(arr2);
+    const { hash: hash2 } = createDisclosure(arr2);
 
     const recursiveDisclosure = ['salt', [{ '...': hash1 }, { '...': hash2 }]];
-    const { hash: expectedHash, disclosure: expectedDisclosure } = await createDisclosure(recursiveDisclosure);
+    const { hash: expectedHash, disclosure: expectedDisclosure } = createDisclosure(recursiveDisclosure);
 
     expect(disclosures).toContain(expectedDisclosure);
     expect(disclosures.length).toEqual(3);
@@ -259,7 +270,7 @@ describe('packSDJWT', () => {
     expect(disc5.length).toEqual(13);
     expect(disc5).toEqual(expect.arrayContaining(disc4));
 
-    expect(result._sd.length).toEqual(3);
+    expect(result?._sd?.length).toEqual(3);
   });
 
   it('should handle invalid inputs', async () => {

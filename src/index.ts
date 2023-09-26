@@ -1,3 +1,5 @@
 export * from './common';
-export * from './verifier';
+export * from './helpers';
 export * from './issuer';
+export * from './types';
+export * from './verifier';

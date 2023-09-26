@@ -1,5 +1,6 @@
 {
   "extends": "../tsconfig.json",
+  "files": ["../src/index.ts"],
   "compilerOptions": {
     "types": ["node"],
     "target": "ES2019",

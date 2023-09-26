@@ -1,5 +1,6 @@
 {
   "extends": "../tsconfig.json",
+  "files": ["../src/index.ts"],
   "compilerOptions": {
     "module": "nodenext",
     "outDir": "../dist/types",

@@ -1,37 +1,34 @@
-import { JWTHeaderParameters, SignJWT } from 'jose';
 import { packSDJWT } from './common';
 import { FORMAT_SEPARATOR, SD_JWT_TYPE } from './constants';
 import { IssueSDJWT } from './types';
+import { base64encode } from './helpers';
 
-export const issueSDJWT: IssueSDJWT = async ({
-  header,
-  payload,
-  disclosureFrame,
-  alg,
-  getHasher,
-  hash_alg = 'sha-256',
-  generateSalt,
-  getIssuerPrivateKey,
-  holderPublicKey,
-}) => {
-  const hasher = await getHasher(hash_alg);
-  const issuerPrivateKey = await getIssuerPrivateKey();
+export const issueSDJWT: IssueSDJWT = async (header, payload, disclosureFrame, { signer, hash, generateSalt, cnf }) => {
+  if (!signer || typeof signer !== 'function') {
+    throw new Error('Signer function is required');
+  }
+  if (!hash?.callback || typeof hash.callback !== 'function') {
+    throw new Error('Hasher callback is required');
+  }
 
-  const { claims, disclosures } = await packSDJWT(payload, disclosureFrame, hasher, { generateSalt });
+  const { claims, disclosures } = await packSDJWT(payload, disclosureFrame, hash.callback, { generateSalt });
 
-  const protectedHeader: JWTHeaderParameters = {
+  const protectedHeader = {
     typ: SD_JWT_TYPE,
-    alg,
     ...header,
   };
 
-  if (holderPublicKey) {
-    claims.cnf = {
-      jwk: holderPublicKey,
-    };
+  if (cnf) {
+    claims.cnf = cnf;
   }
 
-  const jwt = await new SignJWT(claims).setProtectedHeader(protectedHeader).sign(issuerPrivateKey);
+  const signature = await signer(protectedHeader, claims);
+
+  const jwt: string = [
+    base64encode(JSON.stringify(protectedHeader)),
+    base64encode(JSON.stringify(claims)),
+    signature,
+  ].join('.');
 
   let combined = jwt;
   if (disclosures.length > 0) {

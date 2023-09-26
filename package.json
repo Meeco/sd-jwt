@@ -8,7 +8,7 @@
     "build": "tsc",
     "build-all": "npm-run-all clear build:*",
     "build:browser": "tsc -b ./tsconfig/browser.json && echo '{\"type\": \"module\"}'> dist/browser/package.json",
-    "build:browser-bundle-min": "esbuild --minify --bundle dist/browser/index.js --platform=node --format=esm --target=es2018 --outfile=dist/browser/index.bundle.min.js",
+    "build:browser-bundle-min": "esbuild --minify --bundle dist/browser/index.js --format=esm --target=es2018 --outfile=dist/browser/index.bundle.min.js",
     "build:node-cjs": "tsc -b ./tsconfig/node-cjs.json",
     "build:node-esm": "tsc -b ./tsconfig/node-esm.json && echo '{\"type\": \"module\"}'> dist/node/esm/package.json",
     "build:types": "tsc -b ./tsconfig/types.json",
@@ -18,7 +18,7 @@
     "test": "jest --verbose"
   },
   "engines": {
-    "node": "18.16.0"
+    "node": ">=18"
   },
   "repository": "@meeco/sd-jwt",
   "keywords": [

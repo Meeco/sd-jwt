@@ -38,6 +38,162 @@ This is an implementation of [SD-JWT (I-D version 05)](https://www.ietf.org/arch
   - [ ] Publish on npm
 
 
+## issueSDJWT Example
+
+The `issueSDJWT` function takes a JWT header, payload, and disclosure frame and returns a compact SD-JWT combined with the disclosures.  
+Requires a signer and hasher function to be provided
+
+### Basic Usage
+Example Using `jose` lib for signer function & `crypto` for hasher;
+```js
+import crypto from 'crypto'
+import { SignJWT, importJWK } from 'jose';
+
+const header = {
+  alg: 'ES256',
+  kid: 'issuer-key-id'
+};
+
+const payload = {
+  iss: 'https://example.com/issuer',
+  iat: 168300000, 
+  exp: 188300000,
+  sub: 'subject-id',
+  name: 'John Doe'
+};
+
+const disclosureFrame = {
+  _sd: ['name']
+};
+
+const signer = async (header, payload) => {
+  const issuerPrivateKey = await importJWK(ISSUER_KEYPAIR.PRIVATE_KEY_JWK, header.alg);
+  return new SignJWT(payload).setProtectedHeader(header).sign(issuerPrivateKey);
+};
+
+const hasher = (data) => {
+  const digest = crypto.createHash('sha256').update(data).digest();
+  const hash = Buffer.from(digest).toString('base64url');
+  return Promise.resolve(hash);
+};
+
+const sdjwt = await issueSDJWT(header, payload, disclosureFrame, {
+  hash: {
+    alg: 'sha-256',
+    callback: hasher,
+  },
+  signer
+});
+
+// Decoded sdjwt.payload
+{
+  iss: 'https://example.com/issuer',
+  iat: 168300000, 
+  exp: 188300000,
+  sub: 'subject-id',
+  _sd: [
+    'jlJfq0qqkvwwgPrHh6kfzO2p7hpDYX1Mve-62bHgpHE' // HASH Digest of disclosure
+  ]
+}
+
+// Disclosure
+"WyJ2NEVHUzhKRzlTdW9TUjVGIiwibmFtZSIsIkpvaG4gRG9lIl0" // base64url encode of ["v4EGS8JG9SuoSR5F","name","John Doe"]
+```
+
+
+## verifySDJWT Example
+
+The `verifySDJWT` function takes a Compact combined SD-JWT (include optional disclosures & KB-JWT)  
+**Required**: a verifier function that can verify the JWT signature  
+**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload  
+*Optional*: A Keybinding Verifier function that can verify the embedded holder key  
+Returns SD-JWT with all the disclosed claims.
+
+### Basic Usage
+Example Using `jose` lib for verifier  
+Uses `crypto` for Hasher;
+
+```js
+import { importJWK, jwtVerify } from 'jose';
+
+const verifier = async (jwt) => {
+  const key = await getIssuerKey(); // Get SD-JWT issuer public key
+  return jwtVerify(jwt, key);
+};
+
+const keyBindingVerifier = (kbjwt, holderJWK) => {
+  // check against kb-jwt.aud && kb-jwt.nonce
+  const { header } = decodeJWT(kbjwt);
+  const holderKey = await importJWK(holderJWK, header.alg);
+  const verifiedKbJWT = await jwtVerify(kbjwt, holderKey);
+  return !!verifiedKbJWT;
+}
+
+const getHasher = (hashAlg) => {
+  let hasher;
+  // Default Hasher = Hasher for SHA-256
+  if (!hashAlg || hashAlg.toLowerCase() === 'sha-256') {
+    hasher = (data) => {
+      const digest = crypto.createHash('sha256').update(data).digest();
+      return base64encode(digest);
+    };
+  }
+  return Promise.resolve(hasher);
+};
+
+const opts = {
+  kb: {
+    verifier: keyBindingVerifier
+  }
+}
+try {
+  const sdJWTwithDisclosedClaims = await verifySDJWT(compactSDJWT, verifier, getHasher, opts);
+} catch (e) {
+  console.log('Could not verify SD-JWT', e);
+}
+```
+
+## unpackSDJWT Example
+
+The `unpackSDJWT` function takes a SD-JWT payload with _sd digests, array of disclosures and returns the disclosed claims  
+**Required**: a sd-jwt payload with `_sd` digests  
+**Required**: an array of Disclosure objects  
+**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload  
+
+### Basic Usage
+
+```js
+import crypto from 'crypto';
+
+const getHasher = (hashAlg) => {
+  let hasher;
+  // Default Hasher = Hasher for SHA-256
+  if (!hashAlg || hashAlg.toLowerCase() === 'sha-256') {
+    hasher = (data) => {
+      const digest = crypto.createHash('sha256').update(data).digest();
+      return base64encode(digest);
+    };
+  }
+  return Promise.resolve(hasher);
+};
+
+const disclosures = [{
+  disclosure: 'disclosure_array_as_string', // [<salt>, <key>, <value>]
+  key: 'key_of_disclosed_claim',
+  value: 'value_of_disclosed_claim'
+}]
+
+const sdjwt = {
+  _sd: [
+    'SD_DIGEST_1', 
+    'SD_DIGEST_2',
+  ]
+}
+
+const result = await unpackSDJWT(sdjwt, disclosures, getHasher);
+```
+
+
 ## packSDJWT Examples
 
 The `packSDJWT` function takes a claims object and disclosure frame and returns packed claims with selective disclosures encrypted.
