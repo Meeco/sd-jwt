@@ -10,6 +10,7 @@ and this project (loosely) adheres to [Semantic Versioning](https://semver.org/s
 Initial version
 
 ### Changed
+- use `uint8arrays` to support encode/decode base64url
 - removed kb jwt payload checks
 - added error types
 - removed `jose` dependency
