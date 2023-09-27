@@ -11,7 +11,7 @@ module.exports = {
     node: true,
     jest: true,
   },
-  ignorePatterns: ['/dist', '.eslintrc.js', '*.json'],
+  ignorePatterns: ['/dist', '.eslintrc.js', '*.json', '/demo'],
   rules: {
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',

@@ -1,0 +1,16 @@
+{
+  "_sd": [
+    "sub", 
+    "given_name", 
+    "family_name", 
+    "email", 
+    "phone_number", 
+    "updated_at"
+  ],
+  "nationalities": {
+    "_sd": [ 0 ]
+  },
+  "address": {
+    "_sd": ["street_address", "locality", "region"]
+  }
+}
