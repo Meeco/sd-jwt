@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-node:
+  node-test:
     continue-on-error: ${{ !startsWith(matrix.node-version, 'lts') }}
     
     strategy:
@@ -33,6 +33,8 @@ jobs:
           cache: 'npm'
           check-latest: true
       - run: npm ci
+      - name: Run lint:check
+        run: npm run lint:check
       - name: Dev build
         run: npm run build
       - name: Run Test Suite
