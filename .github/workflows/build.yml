@@ -38,7 +38,6 @@ jobs:
         run: npm run build-all
         if: ${{ steps.dist.outputs.cache-hit != 'true' }}
       - uses: actions/upload-artifact@v3
-        if: ${{ !env.ACT }}
         with:
           name: dist
           path: dist
