@@ -16,6 +16,7 @@ const generateDisclosureMD = (disclosures, filename) => {
     }
 
     const hash = hasher(d);
+
     file.write(' * SHA-256 Hash: `'+hash+'`  \n');
     file.write(' * Disclosure:  \n');
     file.write(' `'+d+'`  \n');

@@ -24,10 +24,10 @@ function base64decode(input) {
   return Buffer.from(input, 'base64url').toString();
 }
 
-const hasher = (data) => {
+function hasher(data) {
   const digest = crypto.createHash('sha256').update(data).digest();
   return base64encode(digest);
-};
+}
 
 module.exports = {
   loadFile,
