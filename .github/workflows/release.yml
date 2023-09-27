@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+
+  npm:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        prepare-script:
+          - universal
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: lts/hydrogen # 18
+          registry-url: https://registry.npmjs.org
+          always-auth: true
+      - name: Load cached dist
+        uses: actions/cache@v3
+        id: dist
+        with:
+          path: dist
+          key: dist-${{ hashFiles('src/**/*.ts', 'tsconfig.json', 'tsconfig/*.json', '.github/workflows/*.yml', 'package-lock.json') }}
+          fail-on-cache-miss: true
+      - name: Prepare distribution
+        run: node tools/publish-${{ matrix.prepare-script }}
+      - run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

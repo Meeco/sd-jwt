@@ -38,6 +38,14 @@
   "main": "./dist/node/cjs/index.js",
   "browser": "./dist/browser/index.js",
   "types": "./dist/types/index.d.ts",
+  "files": [
+    "dist/**/package.json",
+    "dist/**/*.js",
+    "dist/types/**/*.d.ts",
+    "!dist/**/*.bundle.js",
+    "!dist/**/*.umd.js",
+    "!dist/**/*.min.js"
+  ],
   "author": "Meeco",
   "devDependencies": {
     "@types/jest": "^29.5.5",

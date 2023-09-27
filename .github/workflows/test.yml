@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  node-test:
+  node:
     continue-on-error: ${{ !startsWith(matrix.node-version, 'lts') }}
     
     strategy:
