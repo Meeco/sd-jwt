@@ -1,7 +1,6 @@
 import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, SD_DIGEST, SD_HASH_ALG } from './constants.js';
 import { DecodeSDJWT, DisclosureFrame, PackSDJWT, UnpackSDJWT } from './types.js';
-import { decodeJwt } from 'jose';
-import { createDisclosure, createHashMapping, decodeDisclosure, unpack } from './helpers.js';
+import { createDisclosure, createHashMapping, decodeDisclosure, unpack, decodeJWT } from './helpers.js';
 
 /**
  * Splits the compact SD-JWT into parts based on the FORMAT_SEPARATOR
@@ -17,7 +16,7 @@ export const decodeSDJWT: DecodeSDJWT = (sdJWT) => {
   if (s.length < 2) {
     throw Error('Not a valid SD-JWT');
   }
-  const unverifiedInputSdJwt = decodeJwt(s.shift() || '');
+  const { payload: unverifiedInputSdJwt } = decodeJWT(s.shift() || '');
   const keyBindingJWT = s.pop();
   const disclosures = decodeDisclosure(s);
 
