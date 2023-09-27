@@ -10,6 +10,12 @@ export class DecodeJWTError extends SDJWTError {
   }
 }
 
+export class DecodeSDJWTError extends SDJWTError {
+  constructor(message: any) {
+    super(message);
+  }
+}
+
 export class IssueSDJWTError extends SDJWTError {
   constructor(message: any) {
     super(message);
