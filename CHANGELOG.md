@@ -10,5 +10,6 @@ and this project (loosely) adheres to [Semantic Versioning](https://semver.org/s
 Initial version
 
 ### Changed
+- removed `jose` dependency
 - added simple demo scripts
 - add `.js` file extensions to all imports for ESM compatibility
