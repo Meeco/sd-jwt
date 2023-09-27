@@ -1,5 +1,5 @@
 {
-  "name": "sd-jwt",
+  "name": "@meeco/sd-jwt",
   "version": "0.0.1",
   "description": "SD-JWT implementation in typescript",
   "source": "src/index.ts",
