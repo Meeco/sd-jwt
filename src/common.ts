@@ -1,7 +1,8 @@
 import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, SD_DIGEST, SD_HASH_ALG } from './constants.js';
 import { DecodeSDJWT, DisclosureFrame, PackSDJWT, UnpackSDJWT } from './types.js';
 import { decodeJwt } from 'jose';
-import { createDisclosure, createHashMapping, decodeDisclosure, unpack } from './helpers.js';
+import { createDisclosure, createHashMapping, decodeDisclosure, isObject, unpack } from './helpers.js';
+import { PackSDJWTError } from './errors.js';
 
 /**
  * Splits the compact SD-JWT into parts based on the FORMAT_SEPARATOR
@@ -54,25 +55,26 @@ export const unpackSDJWT: UnpackSDJWT = async (sdjwt, disclosures, getHasher) =>
  */
 export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, options) => {
   // TODO: check for correct object type for disclosureFrame
-  if (typeof disclosureFrame !== 'object') {
-    throw new Error('disclosureFrame is an invalid format');
+  if (!isObject(disclosureFrame)) {
+    throw new PackSDJWTError('DisclosureFrame must be an object');
   }
+
   if (!disclosureFrame) {
-    throw new Error('no disclosureFrame found');
+    throw new PackSDJWTError('no disclosureFrame found');
   }
 
   if (!hasher || typeof hasher !== 'function') {
-    throw new Error('Hasher is required and must be a function');
+    throw new PackSDJWTError('Hasher is required and must be a function');
   }
 
   if (!claims || typeof claims !== 'object') {
-    throw new Error('no claims found');
+    throw new PackSDJWTError('no claims found');
   }
 
   const sd = disclosureFrame[SD_DIGEST];
 
   let packedClaims;
-  let disclosures = [];
+  let disclosures: any[] = [];
 
   if (claims instanceof Array) {
     packedClaims = [];
@@ -111,7 +113,7 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
       }
     }
 
-    const _sd = [];
+    const _sd: string[] = [];
     // if decoys exist, add decoy
 
     for (const key in claims) {

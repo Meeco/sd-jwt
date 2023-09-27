@@ -1,7 +1,7 @@
 import { decodeSDJWT, unpackSDJWT } from './common.js';
-import { FORMAT_SEPARATOR, KB_JWT_TYPE_HEADER } from './constants.js';
+import { FORMAT_SEPARATOR } from './constants.js';
 import { VerifySDJWT } from './types.js';
-import { decodeJWT } from './helpers.js';
+import { VerifySDJWTError } from './errors.js';
 
 /**
  * Verifies base64 encoded SD JWT against issuer's public key
@@ -14,54 +14,49 @@ import { decodeJWT } from './helpers.js';
  */
 export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts) => {
   if (typeof sdjwt !== 'string') {
-    throw new Error('Invalid SD-JWT input - expects a compact SD-JWT as string');
+    throw new VerifySDJWTError('Invalid SD-JWT input - expects a compact SD-JWT as string');
   }
 
-  if (!verifier && typeof verifier !== 'function') {
-    throw new Error('Verifier function is required');
+  if (!verifier || typeof verifier !== 'function') {
+    throw new VerifySDJWTError('Verifier function is required');
   }
 
-  if (!getHasher && typeof getHasher !== 'function') {
-    throw new Error('GetHasher function is requred');
+  if (!getHasher || typeof getHasher !== 'function') {
+    throw new VerifySDJWTError('GetHasher function is requred');
+  }
+
+  const hasher = await getHasher('sha-256');
+
+  if (!hasher || typeof hasher !== 'function') {
+    throw new VerifySDJWTError('GetHasher must return a function');
   }
 
   const { unverifiedInputSdJwt: jwt, disclosures, keyBindingJWT } = decodeSDJWT(sdjwt);
 
-  if (opts && opts.kb) {
+  if (opts?.kb) {
     const kb = opts.kb;
     const holderPublicKey = jwt.cnf?.jwk;
+
     if (!holderPublicKey) {
-      throw new Error('No holder public key in SD-JWT');
-    }
-
-    if (!kb.skipCheck) {
-      if (!keyBindingJWT) {
-        throw new Error('No Key Binding JWT found');
-      }
-
-      const kbjwt = decodeJWT(keyBindingJWT);
-      if (kbjwt.header.typ !== KB_JWT_TYPE_HEADER) {
-        throw new Error('KB_JWT error: invalid header type');
-      }
-      if (!kbjwt.payload.aud) {
-        throw new Error('KB_JWT error: aud not found');
-      }
-      if (!kbjwt.payload.nonce) {
-        throw new Error('KB_JWT error: nonce not found');
-      }
+      throw new VerifySDJWTError('No holder public key in SD-JWT');
     }
 
     if (kb.verifier) {
       if (typeof kb.verifier !== 'function') {
-        throw new Error('Invalid KB_JWT verifier function');
+        throw new VerifySDJWTError('Invalid KB_JWT verifier function');
       }
+
+      if (!keyBindingJWT) {
+        throw new VerifySDJWTError('No Key Binding JWT found');
+      }
+
       try {
         const verifiedKBJWT = await kb.verifier(keyBindingJWT, holderPublicKey);
         if (!verifiedKBJWT) {
-          throw new Error('KB JWT is invalid');
+          throw new VerifySDJWTError('KB JWT is invalid');
         }
       } catch (e) {
-        throw new Error('Failed to verify Key Binding JWT');
+        throw new VerifySDJWTError('Failed to verify Key Binding JWT');
       }
     }
   }
@@ -71,10 +66,10 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
   try {
     const verified = await verifier(compactJWT);
     if (!verified) {
-      throw new Error('Failed to verify SD-JWT');
+      throw new VerifySDJWTError('Failed to verify SD-JWT');
     }
   } catch (e) {
-    throw new Error('Failed to verify SD-JWT');
+    throw new VerifySDJWTError('Failed to verify SD-JWT');
   }
 
   return unpackSDJWT(jwt, disclosures, getHasher);
