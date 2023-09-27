@@ -24,6 +24,7 @@ jobs:
         with:
           node-version: lts/hydrogen # 18
           cache: 'npm'
+          check-latest: true
       - run: npm ci
       - id: cache-key
         run: echo "value=dist-${{ hashFiles('src/**/*.ts', 'tsconfig.json', 'tsconfig/*.json', '.github/workflows/*.yml', 'package-lock.json') }}" >> $GITHUB_OUTPUT
