@@ -1,0 +1,35 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  node:
+    continue-on-error: ${{ !startsWith(matrix.node-version, 'lts') }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version:
+          - lts/hydrogen # 18
+          - current
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup node
+        id: node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          check-latest: true
+      - run: npm ci
+      - name: Run Test Suite
+        run: npm run test
