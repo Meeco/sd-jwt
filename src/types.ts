@@ -149,7 +149,6 @@ export interface IssueSDJWTOptions {
 export interface VerifySdJwtOptions {
   kb?: {
     verifier?: KeyBindingVerifier;
-    skipCheck?: boolean;
   };
 }
 /**

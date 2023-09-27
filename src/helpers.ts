@@ -1,4 +1,5 @@
 import { SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
+import { DecodeJWTError } from './errors.js';
 import { Disclosure, DisclosureClaim, Hasher, SaltGenerator, SdDigestHashmap, UnverifiedJWT } from './types.js';
 
 export function generateSalt(length: number): string {
@@ -18,15 +19,19 @@ export function base64decode(input: string): string {
   return Buffer.from(input, 'base64url').toString();
 }
 
+export function isObject(input: any): boolean {
+  return typeof input === 'object' && input !== null && !Array.isArray(input);
+}
+
 // no verification
 export function decodeJWT(input: string): UnverifiedJWT {
   if (typeof input !== 'string') {
-    throw new Error('Invalid input');
+    throw new DecodeJWTError('Invalid input');
   }
 
   const { 0: header, 1: payload, 2: signature, length } = input.split('.');
   if (length < 3) {
-    throw new Error('Invalid JWT');
+    throw new DecodeJWTError('Invalid JWT as input');
   }
 
   return {
@@ -81,7 +86,7 @@ export const createHashMapping = (disclosures: Disclosure[], hasher: Hasher): Sd
  * removes any undisclosed claims
  */
 export const unpackArray = ({ arr, map }) => {
-  const unpackedArray = [];
+  const unpackedArray: any[] = [];
   arr.forEach((item) => {
     if (item instanceof Object) {
       // if Array item is { '...': <SD_HASH_DIGEST> }
