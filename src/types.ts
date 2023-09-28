@@ -170,7 +170,7 @@ export type PackSDJWT = (
   claims: object | Array<any>,
   disclosureFrame: DisclosureFrame,
   hasher: Hasher,
-  options: {
+  options?: {
     generateSalt?: SaltGenerator;
   },
 ) => Promise<{

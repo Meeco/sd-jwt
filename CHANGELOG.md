@@ -10,6 +10,7 @@ and this project (loosely) adheres to [Semantic Versioning](https://semver.org/s
 Initial version
 
 ### Changed
+- add E2E test
 - removed kb jwt payload checks
 - added error types
 - removed `jose` dependency

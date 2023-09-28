@@ -1,0 +1,6 @@
+{
+  "_sd": ["name", "age", "address"],
+  "address": {
+    "_sd": ["street", "country"]
+  }
+}

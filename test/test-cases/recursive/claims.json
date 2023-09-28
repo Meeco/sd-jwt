@@ -1,0 +1,9 @@
+{
+  "name": "John",
+  "age": 42,
+  "address": {
+    "street": "123 Main St",
+    "country": "AU"
+  }
+}
+
