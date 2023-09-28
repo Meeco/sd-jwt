@@ -19,7 +19,7 @@
     "node": ">=18",
     "npm": ">=8.0.0"
   },
-  "repository": "@meeco/sd-jwt",
+  "repository": "https://github.com/Meeco/sd-jwt",
   "keywords": [
     "sd-jwt"
   ],
