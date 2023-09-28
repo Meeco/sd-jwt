@@ -50,6 +50,7 @@ export const decodeDisclosure = (disclosures: string[]): Array<Disclosure> => {
 
     let key;
     let value;
+    let salt;
 
     // if disclosure is a value in an array
     // [<SALT>, <VALUE>]
@@ -59,12 +60,14 @@ export const decodeDisclosure = (disclosures: string[]): Array<Disclosure> => {
     // if disclosure is a value in an object
     // [<SALT>, <KEY>, <VALUE>]
     if (decoded.length == 3) {
+      salt = decoded[0];
       key = decoded[1];
       value = decoded[2];
     }
 
     return {
       disclosure: d,
+      salt,
       key,
       value,
     };

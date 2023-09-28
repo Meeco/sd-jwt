@@ -95,6 +95,7 @@ export interface SDJWTPayload extends JWTPayload {
 
 export interface Disclosure {
   disclosure: string;
+  salt: string;
   key: string;
   value: any;
 }
