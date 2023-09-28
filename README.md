@@ -37,6 +37,148 @@ This is an implementation of [SD-JWT (I-D version 05)](https://www.ietf.org/arch
   - [ ] Documentation
   - [ ] Publish on npm
 
+## Disclosure Frame
+To issue or pack claims into a valid SD-JWT we use Disclosure Frame to define which properties/values should be selectively diclosable. \
+It follows the following format:
+```typescript
+type ArrayIndex = number;
+type DisclosureFrame = {
+  [key: string | ArrayIndex]: DisclosureFrame | unknown;
+  _sd?: Array<string | ArrayIndex>;
+};
+```
+### Examples:
+
+#### set property as selectively disclosable
+```js
+const claims = {
+  firstname: 'John',
+  lastname: 'Doe'
+}
+const diclosureFrame = {
+  _sd: ['firstname'] // set firstname as selectively discloseable
+}
+
+// result
+const sdjwt = {
+  _sd: ['LjgwZy8TNXmmPO9mNqVDtq3jiX5r3YS-P-qw2hBNYyU']
+  lastname: 'Doe',
+}
+```
+
+#### nested property
+```js
+const claims = {
+  address: {
+    street: '123 Main St',
+    suburb: 'Anytown',
+    postcode: '1234'
+  }
+}
+
+const disclosureFrame = {
+  address: {
+    // set address.street and address.suburb as selectively discloseable
+    _sd: ['street', 'suburb'];
+  }
+}
+
+// result
+const sdjwt = {
+  address: {
+    _sd: [
+      '02d7bUYevjfAzJ0Gr42ymHy66ezQVL7huNGBO68xSfs',
+      'ai7P4vgPZ-Jk1QwL55BLQqtN2gwWy31-pi2VGWiIggs',
+    ],
+    postcode: '1234'
+  }
+}
+```
+
+#### Array item
+```js
+const claims = {
+  nicknames: ['Johnny', 'JD']
+}
+
+const disclosureFrame = {
+  nicknames: {
+    _sd: [0, 1] // index of items in 'nicknames' Array
+  }
+}
+
+// result
+const sdjwt = {
+  nicknames: [
+    { '...': 'yfhdm_aKTMgm666j79GoXr2mer2dBW0cFfap8iXnAzY' },
+    { '...': 'EU0ORASnAlqNtRwttBXsGTISxQ6myFPMBHPE0Ds8aSE' }
+  ]
+}
+```
+
+#### Object in Arrays
+```js
+const claims = {
+  items: [
+    {
+      type: 'shirt',
+      size: 'M'
+    },
+    'Towel',
+    'Water Bottle'
+  ]
+}
+
+const disclosureFrame = {
+  items: {
+    0: {
+      _sd: ['size'] // `size` property of items[0]
+    }
+  }
+}
+
+// result
+const sdjwt = {
+  items: [
+    {
+      _sd: ['7aGqCE9HepzELBi59BvxxriDiV7uiB4yHTyN1im_m4M'],
+      type: 'shirt'
+    },
+    'Towel',
+    'Water Bottle'
+  ]
+}
+```
+
+#### Array in Arrays
+```js
+const claims = {
+  colors: [
+    ['R','G','B'], 
+    ['C','Y','M','K']
+  ]
+}
+
+const disclosureFrame = {
+  colors: {
+    0: {
+      _sd: [0, 2] // `R` and `B` in colors[0]
+    }
+  }
+}
+
+// result
+const sdjwt = {
+  colors: [
+    [
+      { '...': '' },
+      'G',
+      { '...': '' }
+    ],
+    ['C','Y','M','K']
+  ]
+}
+```
 
 ## issueSDJWT Example
 
@@ -106,10 +248,10 @@ const sdjwt = await issueSDJWT(header, payload, disclosureFrame, {
 
 ## verifySDJWT Example
 
-The `verifySDJWT` function takes a Compact combined SD-JWT (include optional disclosures & KB-JWT)
-**Required**: a verifier function that can verify the JWT signature
-**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload
-*Optional*: A Keybinding Verifier function that can verify the embedded holder key
+The `verifySDJWT` function takes a Compact combined SD-JWT (include optional disclosures & KB-JWT) \
+**Required**: a verifier function that can verify the JWT signature \
+**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload \
+*Optional*: A Keybinding Verifier function that can verify the embedded holder key \
 Returns SD-JWT with all the disclosed claims.
 
 ### Basic Usage
@@ -159,9 +301,9 @@ try {
 
 ## unpackSDJWT Example
 
-The `unpackSDJWT` function takes a SD-JWT payload with _sd digests, array of disclosures and returns the disclosed claims
-**Required**: a sd-jwt payload with `_sd` digests
-**Required**: an array of Disclosure objects
+The `unpackSDJWT` function takes a SD-JWT payload with _sd digests, array of disclosures and returns the disclosed claims \
+**Required**: a sd-jwt payload with `_sd` digests \
+**Required**: an array of Disclosure objects \
 **Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload
 
 ### Basic Usage
@@ -262,7 +404,7 @@ const claims = {
 };
 
 const disclosureFrame = {
-  items: { _sd: 1 } // item at index 1
+  items: { _sd: [1] } // item at index 1
 }
 
 const {claims: packedClaims, disclosures} = await packSDJWT(claims, disclosureFrame, hasher);
@@ -279,57 +421,7 @@ packedClaims = {
 }
 
 disclosures = [
-  "WyJzYWx0IiwgMV0=" // b64 encoded [salt, 1]
-]
-```
-
-### Combinations
-
-```js
-const claims = {
-  arrayInArray: [[1, 2], [3, 4]],
-  objectInArray: [{id: 1}, {id: 2}],
-  combo: [[1, {id: 2}], [{id:3}, 4]]
-};
-
-const disclosureFrame = {
-  arrayInArray: {
-    0: { _sd: [0] },
-    1: { _sd: [1] }
-  },
-  objectInArray: [
-    {_sd: ['id']},
-    {_sd: ['id']}
-  ],
-  combo: {
-    0: {
-      _sd: [0],
-      1: { _sd: ['id'] }
-    },
-    1: {
-      0: { _sd: ['id'] }
-    }
-  }
-};
-
-const {claims: packedClaims, disclosures} = await packSDJWT(claims, disclosureFrame, hasher);
-
-// packedClaims
-{
-  arrayInArray: [[{...: 'abc123'}, 2], [3, {...: 'def456'}]],
-  objectInArray: [{_sd: ['xyz789']}, {_sd: ['uvw012']}],
-  combo: [[{...: 'ghi345'}, {_sd: ['jkl678']}], [{_sd: ['mno901']}, 4]]
-}
-
-// disclosures
-[
-  'abc123', // arrayInArray[0][0]
-  'def456', // arrayInArray[1][1]
-  'xyz789', // objectInArray[0].id
-  'uvw012', // objectInArray[1].id
-  'ghi345', // combo[0][0]
-  'jkl678', // combo[0][1].id
-  'mno901', // combo[1][0].id
+  "WyJzYWx0IiwgMV0=" // b64 encoded [salt, 'b']
 ]
 ```
 
