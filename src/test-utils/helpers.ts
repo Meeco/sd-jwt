@@ -1,20 +1,19 @@
 import { readFile } from 'node:fs/promises';
 import { readdirSync } from 'fs';
-import { Example, EXAMPLES_DIRECTORY, ISSUER_PUBLIC_KEY } from './params';
+import { Example, EXAMPLES_DIRECTORY, ISSUER_PUBLIC_KEY, TEST_CASES_DIRECTORY } from './params';
 import { importJWK } from 'jose';
 
-// helper
-function getFilePath(name: string, file: Example) {
-  return `${EXAMPLES_DIRECTORY}/${name}/${file}`;
+function getDirectory(dirname: string) {
+  return readdirSync(dirname, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
 }
 
 /**
- * List directories under EXAMPLES_DIRECTORY
+ * './test/example' helpers
  */
 export function getExamples() {
-  return readdirSync(EXAMPLES_DIRECTORY, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name);
+  return getDirectory(EXAMPLES_DIRECTORY);
 }
 
 /**
@@ -23,7 +22,7 @@ export function getExamples() {
  * @param file enumerated file type
  */
 export async function loadExample(name: string, file: Example) {
-  const path = getFilePath(name, file);
+  const path = `${EXAMPLES_DIRECTORY}/${name}/${file}`;
   const buffer = await readFile(path);
   return buffer.toString();
 }
@@ -60,3 +59,26 @@ export async function loadKeyBindingJWT(name) {
 export const getIssuerKey = async () => {
   return importJWK(ISSUER_PUBLIC_KEY, 'ES256');
 };
+
+/**
+ * './test/test-cases' helpers
+ */
+export function getTestCases() {
+  return getDirectory(TEST_CASES_DIRECTORY);
+}
+
+export async function loadTestCase(name: string, file: string) {
+  const path = `${TEST_CASES_DIRECTORY}/${name}/${file}`;
+  const buffer = await readFile(path);
+  return buffer.toString();
+}
+
+export async function loadClaims(name) {
+  const file = await loadTestCase(name, 'claims.json');
+  return JSON.parse(file);
+}
+
+export async function loadDisclosureFrame(name) {
+  const file = await loadTestCase(name, 'disclosureFrame.json');
+  return JSON.parse(file);
+}

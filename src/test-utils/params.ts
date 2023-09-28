@@ -1,4 +1,5 @@
 export const EXAMPLES_DIRECTORY = './test/examples';
+export const TEST_CASES_DIRECTORY = './test/test-cases';
 
 export const ISSUER_PUBLIC_KEY = {
   kty: 'EC',
