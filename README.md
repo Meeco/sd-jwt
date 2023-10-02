@@ -432,6 +432,8 @@ disclosures = [
 ```
 git clone https://github.com/Meeco/sd-jwt
 npm install
+
+npm run dev:setup
 ```
 
 ### Test

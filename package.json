@@ -5,14 +5,20 @@
   "scripts": {
     "build": "tsc",
     "build-all": "npm-run-all clear build:*",
-    "build:browser": "tsc -b ./tsconfig/browser.json && echo '{\"type\": \"module\"}'> dist/browser/package.json",
+    "build:browser": "npm-run-all runtime-browser 'build -- -b ./tsconfig/browser.json' && echo '{\"type\": \"module\"}'> dist/browser/package.json",
     "build:browser-bundle-min": "esbuild --minify --bundle dist/browser/index.js --format=esm --target=es2018 --outfile=dist/browser/index.bundle.min.js",
-    "build:node-cjs": "tsc -b ./tsconfig/node-cjs.json",
-    "build:node-esm": "tsc -b ./tsconfig/node-esm.json && echo '{\"type\": \"module\"}'> dist/node/esm/package.json",
+    "build:node-cjs": "npm-run-all runtime-node 'build -- -b ./tsconfig/node-cjs.json'",
+    "build:node-esm": "npm-run-all runtime-node 'build -- -b ./tsconfig/node-esm.json' && echo '{\"type\": \"module\"}'> dist/node/esm/package.json",
     "build:types": "tsc -b ./tsconfig/types.json",
     "clear": "rm -Rf ./dist",
+    "dev:setup": "npm run runtime-node",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "lint:check": "eslint \"{src,test}/**/*.ts\"",
+    "runtime-browser": "npm-run-all runtime:clear runtime:browser:*",
+    "runtime-node": "npm-run-all runtime:clear runtime:node:*",
+    "runtime:browser:copy": "cp ./src/runtime/browser/*.ts ./src/runtime",
+    "runtime:clear": "find src/runtime -maxdepth 1 -type f -print0 | xargs -0 rm -f",
+    "runtime:node:copy": "cp ./src/runtime/node/*.ts ./src/runtime",
     "test": "jest --verbose"
   },
   "engines": {

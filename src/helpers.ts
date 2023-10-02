@@ -1,6 +1,7 @@
 import { SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
 import { DecodeJWTError } from './errors.js';
 import { Disclosure, DisclosureClaim, Hasher, SaltGenerator, SdDigestHashmap, UnverifiedJWT } from './types.js';
+import { encode, decode } from './runtime/base64url.js';
 
 export function generateSalt(length: number): string {
   let salt = '';
@@ -12,11 +13,11 @@ export function generateSalt(length: number): string {
 }
 
 export function base64encode(input: string | Uint8Array): string {
-  return Buffer.from(input).toString('base64url');
+  return encode(input);
 }
 
 export function base64decode(input: string): string {
-  return Buffer.from(input, 'base64url').toString();
+  return decode(input).toString();
 }
 
 export function isObject(input: any): boolean {
