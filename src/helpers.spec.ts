@@ -1,4 +1,5 @@
-import { base64decode, base64encode } from './helpers';
+import { base64decode, base64encode, createDisclosureMap } from './helpers';
+import crypto from 'crypto';
 
 const disclosure: string[] = ['5a2W0_NrlEZzfqmk_7Pq-w', 'administeringCentre', 'Praxis Sommergarten'];
 const encodedDisclosure: string =
@@ -16,5 +17,47 @@ describe('base64decode', () => {
   it('should decode a base64url encoded string', () => {
     const decoded = base64decode(encodedDisclosure);
     expect(JSON.parse(decoded)).toEqual(disclosure);
+  });
+});
+
+const hasher = (data) => {
+  const digest = crypto.createHash('sha256').update(data).digest();
+  return base64encode(digest);
+};
+
+describe('createDisclosureMap', () => {
+  it('should be able to create a map with hash as the key', () => {
+    const hash = hasher('disclosure');
+    const disclosures = [
+      {
+        disclosure: 'disclosure',
+        key: 'key',
+        value: 'value',
+      },
+    ];
+    const result = createDisclosureMap(disclosures, hasher);
+
+    expect(result[hash].disclosure).toEqual('disclosure');
+  });
+
+  it('should be able to create a map of recursive SD', () => {
+    const recursiveDigest = hasher('recursive');
+    const disclosures = [
+      {
+        disclosure: 'parent',
+        key: 'key1',
+        value: {
+          _sd: [recursiveDigest],
+        },
+      },
+      {
+        disclosure: 'recursive',
+        key: 'key2',
+        value: 'c',
+      },
+    ];
+    const result = createDisclosureMap(disclosures, hasher);
+
+    expect(result[recursiveDigest].parentDisclosures).toEqual(['parent']);
   });
 });

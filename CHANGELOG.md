@@ -7,6 +7,9 @@ and this project (loosely) adheres to [Semantic Versioning](https://semver.org/s
 
 ## Next Release
 
+### Changed
+- added createSDMap
+
 ### Fixed
 - base64 encode/decode support for browser and node runtime
 

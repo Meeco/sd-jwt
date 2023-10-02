@@ -1,6 +1,14 @@
 import { SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
 import { DecodeJWTError } from './errors.js';
-import { Disclosure, DisclosureClaim, Hasher, SaltGenerator, SdDigestHashmap, UnverifiedJWT } from './types.js';
+import {
+  Disclosure,
+  DisclosureClaim,
+  DisclosureMap,
+  Hasher,
+  SaltGenerator,
+  SdDigestHashmap,
+  UnverifiedJWT,
+} from './types.js';
 import { encode, decode } from './runtime/base64url.js';
 
 export function generateSalt(length: number): string {
@@ -95,7 +103,7 @@ export const unpackArray = ({ arr, map }) => {
         const hash = item[SD_LIST_PREFIX];
         const disclosed = map[hash];
         if (disclosed) {
-          unpackedArray.push(disclosed.value);
+          unpackedArray.push(unpack({ obj: disclosed.value, map }));
         }
       } else {
         // unpack recursively
@@ -147,6 +155,7 @@ export const unpack = ({ obj, map }) => {
 /**
  * Helpers for packSDJWT
  */
+
 export const createDisclosure = (
   claim: DisclosureClaim,
   hasher: Hasher,
@@ -172,4 +181,114 @@ export const createDisclosure = (
     hash,
     disclosure,
   };
+};
+
+/**
+ * Helpers for createSDMap
+ */
+const getParentSD = (disclosure: string, hasher: Hasher, hashmap: Record<string, string>): string[] => {
+  const hash = hasher(disclosure);
+  const parent = hashmap[hash];
+
+  if (!parent) {
+    return [];
+  }
+
+  if (hashmap[parent]) {
+    return [parent].concat(getParentSD(parent, hasher, hashmap));
+  }
+
+  return [parent];
+};
+
+export const createDisclosureMap = (disclosures: Disclosure[], hasher: Hasher): DisclosureMap => {
+  const map: DisclosureMap = {};
+  const parentMap: Record<string, string> = {};
+
+  disclosures.forEach(({ disclosure, value }) => {
+    if (value && value._sd) {
+      value._sd.forEach((sd: string) => {
+        parentMap[sd] = disclosure;
+      });
+    }
+  });
+
+  disclosures.forEach(({ disclosure, value }) => {
+    const parent = getParentSD(disclosure, hasher, parentMap);
+    const hash = hasher(disclosure);
+
+    map[hash] = {
+      disclosure,
+      value,
+      parentDisclosures: parent,
+    };
+  });
+
+  return map;
+};
+export const unpackArrayClaims = (arr: Array<any>, map: SdDigestHashmap) => {
+  const unpackedArray: any[] = [];
+
+  arr.forEach((item) => {
+    if (item instanceof Object) {
+      // if Array item is { '...': <SD_HASH_DIGEST> }
+      if (item[SD_LIST_PREFIX]) {
+        const hash = item[SD_LIST_PREFIX];
+        const disclosed = map[hash];
+
+        if (disclosed) {
+          unpackedArray.push({
+            '...': unpackClaims(disclosed.value, map),
+            _sd: hash,
+          });
+        }
+      } else {
+        // unpack recursively
+        console.log('unpacking claims', item);
+        const claims = unpackClaims(item, map);
+        if (Object.keys(claims).length > 0) {
+          unpackedArray.push(claims);
+        } else {
+          unpackedArray.push(null);
+        }
+      }
+    } else {
+      unpackedArray.push(null);
+    }
+  });
+
+  return unpackedArray;
+};
+
+export const unpackClaims = (obj: any, map: SdDigestHashmap) => {
+  if (obj instanceof Array) {
+    return unpackArrayClaims(obj, map);
+  }
+
+  if (!isObject(obj)) {
+    return {};
+  }
+
+  const claims = {};
+  for (const key in obj) {
+    // if obj property value is an object or array
+    // recursively unpack
+    if (key !== SD_DIGEST && key !== SD_LIST_PREFIX && obj[key] instanceof Object) {
+      const claim = unpackClaims(obj[key], map);
+      if (Object.keys(claim).length > 0) {
+        claims[key] = claim;
+      }
+    }
+  }
+
+  if (obj._sd) {
+    obj._sd.forEach((hash: string) => {
+      const disclosed = map[hash];
+      if (disclosed) {
+        claims[disclosed.key] = { _sd: hash };
+      }
+    });
+  }
+
+  return claims;
 };
