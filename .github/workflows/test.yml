@@ -2,17 +2,17 @@ name: Test
 
 on:
   push:
-    branches: 
+    branches:
       - '*'
   pull_request:
-    branches: 
+    branches:
       - '*'
   workflow_dispatch:
 
 jobs:
   node:
     continue-on-error: ${{ !startsWith(matrix.node-version, 'lts') }}
-    
+
     strategy:
       fail-fast: false
       matrix:
@@ -41,3 +41,7 @@ jobs:
         run: npm run build
       - name: Run Test Suite
         run: npm run test
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
