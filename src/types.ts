@@ -120,6 +120,7 @@ type ArrayIndex = number;
 export type DisclosureFrame = {
   [key: string | ArrayIndex]: DisclosureFrame | unknown;
   _sd?: Array<string | ArrayIndex>;
+  _decoyCount?: number;
 };
 
 export type PackedClaims = {

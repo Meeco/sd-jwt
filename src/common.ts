@@ -1,6 +1,14 @@
 import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, SD_DIGEST, SD_HASH_ALG } from './constants.js';
 import { DecodeSDJWT, DisclosureFrame, PackSDJWT, UnpackSDJWT } from './types.js';
-import { createDisclosure, createHashMapping, decodeDisclosure, isObject, unpack, decodeJWT } from './helpers.js';
+import {
+  createDisclosure,
+  createHashMapping,
+  decodeDisclosure,
+  decodeJWT,
+  generateSalt,
+  isObject,
+  unpack,
+} from './helpers.js';
 import { DecodeSDJWTError, PackSDJWTError } from './errors.js';
 
 /**
@@ -99,12 +107,9 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
     }
   } else {
     packedClaims = {};
-    // const decoys = disclosureFrame[DF_DECOY_COUNT];
-    // delete disclosureFrame[DF_DECOY_COUNT];
-
     const recursivelyPackedClaims = {};
     for (const key in disclosureFrame) {
-      if (key !== SD_DIGEST) {
+      if (key !== SD_DIGEST && key !== '_decoyCount') {
         const packed = await packSDJWT(claims[key], disclosureFrame[key] as DisclosureFrame, hasher, options);
         recursivelyPackedClaims[key] = packed.claims;
         disclosures = disclosures.concat(packed.disclosures);
@@ -112,7 +117,6 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
     }
 
     const _sd: string[] = [];
-    // if decoys exist, add decoy
 
     for (const key in claims) {
       const claim = recursivelyPackedClaims[key] ? recursivelyPackedClaims[key] : claims[key];
@@ -125,8 +129,16 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
       }
     }
 
+    if (disclosureFrame?._decoyCount > 0) {
+      for (let i = 0; i < disclosureFrame._decoyCount; i++) {
+        const salt = generateSalt(16);
+        const decoy = hasher(salt);
+        _sd.push(decoy);
+      }
+    }
+
     if (_sd.length > 0) {
-      packedClaims[SD_DIGEST] = _sd;
+      packedClaims[SD_DIGEST] = _sd.sort();
     }
   }
   return { claims: packedClaims, disclosures };

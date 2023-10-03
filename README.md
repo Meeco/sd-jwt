@@ -14,7 +14,7 @@ This is an implementation of [SD-JWT (I-D version 05)](https://www.ietf.org/arch
   - [x] Support for nested objects
   - [x] Support for arrays
   - [x] Optional: public key binding (cnf)
-  - [ ] Optional: decoy digest
+  - [x] Optional: decoy digest
 
 - Verify SD-JWT:
   - [x] Support recursive disclosures (parent object and its keys)
@@ -45,8 +45,12 @@ type ArrayIndex = number;
 type DisclosureFrame = {
   [key: string | ArrayIndex]: DisclosureFrame | unknown;
   _sd?: Array<string | ArrayIndex>;
+  _decoyCount?: number;
 };
 ```
+
+`_decoyCount` is an optional property that defines the number of decoy digests to add.
+
 ### Examples:
 
 #### set property as selectively disclosable

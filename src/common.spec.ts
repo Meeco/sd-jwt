@@ -292,4 +292,24 @@ describe('packSDJWT', () => {
     // @ts-expect-error Invalid hasher
     await expect(packSDJWT({}, {}, 'invalid', {})).rejects.toThrow();
   });
+
+  describe('decoys', () => {
+    it('should be able to generate decoys', async () => {
+      const claims = { id: 123 };
+      const disclosureFrame = { _sd: ['id'], _decoyCount: 5 };
+      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
+
+      expect(disclosures.length).toBe(1);
+      expect(result._sd.length).toBe(6);
+    });
+
+    it('should handle number less than 0', async () => {
+      const claims = { id: 123 };
+      const disclosureFrame = { _sd: ['id'], _decoyCount: -5 };
+      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
+
+      expect(disclosures.length).toBe(1);
+      expect(result._sd.length).toBe(1);
+    });
+  });
 });

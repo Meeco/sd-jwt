@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { SignJWT, importJWK } from 'jose';
-import { base64encode } from './helpers';
+import { base64encode, decodeJWT } from './helpers';
 import { issueSDJWT } from './issuer';
 import { ISSUER_KEYPAIR } from './test-utils/params';
 
@@ -36,12 +36,16 @@ describe('issueSDJWT', () => {
       generateSalt,
     });
 
-    const expectedHeader = 'eyJ0eXAiOiJzZCtqd3QiLCJhbGciOiJFUzI1NiJ9';
-    const expectedPayload =
-      'eyJfc2QiOlsia2pBSTRzV3JoV1R3ZHBTWmZMWlBhcFhFZVdyRksyZHVBUUhCbl83NloyayIsIjdqcF82Tk5VQTRIRTJDWlJSMmZ0b2g0Wm9TcG5ZaG0tNmtvUE0tbzhRX2ciXX0';
+    const jwtHeader = result.split('.')[0];
+    const { payload: issuedPayload } = decodeJWT(result);
 
-    const { 0: jwtHeader, 1: jwtPayload } = result.split('.');
+    const expectedHeader = 'eyJ0eXAiOiJzZCtqd3QiLCJhbGciOiJFUzI1NiJ9';
+    const expectedPayload = [
+      '7jp_6NNUA4HE2CZRR2ftoh4ZoSpnYhm-6koPM-o8Q_g',
+      'kjAI4sWrhWTwdpSZfLZPapXEeWrFK2duAQHBn_76Z2k',
+    ];
+
     expect(jwtHeader).toEqual(expectedHeader);
-    expect(jwtPayload).toEqual(expectedPayload);
+    expect(issuedPayload._sd).toEqual(expect.arrayContaining(expectedPayload));
   });
 });
