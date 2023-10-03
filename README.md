@@ -1,3 +1,6 @@
+[![npm](https://img.shields.io/npm/dt/@meeco/sd-jwt.svg)](https://www.npmjs.com/package/@meeco/sd-jwt)
+[![npm](https://img.shields.io/npm/v/@meeco/sd-jwt.svg)](https://www.npmjs.com/package/@meeco/sd-jwt)
+
 # SD-JWT
 
 This is an implementation of [SD-JWT (I-D version 05)](https://www.ietf.org/archive/id/draft-ietf-oauth-selective-disclosure-jwt-05.html) in typescript.
@@ -154,7 +157,7 @@ const sdjwt = {
 ```js
 const claims = {
   colors: [
-    ['R','G','B'], 
+    ['R','G','B'],
     ['C','Y','M','K']
   ]
 }
@@ -430,7 +433,7 @@ disclosures = [
 
 createSDMap returns \
 **sdMap**: an object representation of the SD claims in an sd-jwt \
-**DisclosureMap**: a map of hash values to get the disclosure and its parent disclosures if the SD claim was recursively packed 
+**DisclosureMap**: a map of hash values to get the disclosure and its parent disclosures if the SD claim was recursively packed
 
 ```js
   const { sdMap, disclosureMap } = await createSDMap(sdjwt, hasher);
@@ -438,9 +441,9 @@ createSDMap returns \
   // sdMap
   {
     nationalities: [
-      { 
+      {
         '...': {}, // item array value (if any recursive sd is present)
-        _sd: 'pFndjkZ_VCzmyTa6UjlZo3dh-ko8aIKQc9DlGzhaVYo' 
+        _sd: 'pFndjkZ_VCzmyTa6UjlZo3dh-ko8aIKQc9DlGzhaVYo'
       },
       { '...': {}, _sd: '7Cf6JkPudry3lcbwHgeZ8khAv1U1OSlerP0VkBJrWZ0' }
     ],
