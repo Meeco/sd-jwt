@@ -1,6 +1,7 @@
-import { SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
+import { FORMAT_SEPARATOR, SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
 import { DecodeJWTError } from './errors.js';
 import {
+  CompactSDJWT,
   Disclosure,
   DisclosureClaim,
   DisclosureMap,
@@ -244,7 +245,6 @@ export const unpackArrayClaims = (arr: Array<any>, map: SdDigestHashmap) => {
         }
       } else {
         // unpack recursively
-        console.log('unpacking claims', item);
         const claims = unpackClaims(item, map);
         if (Object.keys(claims).length > 0) {
           unpackedArray.push(claims);
@@ -291,4 +291,20 @@ export const unpackClaims = (obj: any, map: SdDigestHashmap) => {
   }
 
   return claims;
+};
+
+export const combineSDJWT = (jwt: string, disclosures: string[], kbjwt?: string): CompactSDJWT => {
+  let combined: CompactSDJWT = jwt;
+
+  if (disclosures.length > 0) {
+    combined += FORMAT_SEPARATOR + disclosures.join(FORMAT_SEPARATOR);
+  }
+
+  combined += FORMAT_SEPARATOR;
+
+  if (kbjwt) {
+    combined += kbjwt;
+  }
+
+  return combined;
 };

@@ -1,6 +1,6 @@
 {
   "name": "@meeco/sd-jwt",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "SD-JWT implementation in typescript",
   "scripts": {
     "build": "tsc",

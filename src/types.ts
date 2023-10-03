@@ -105,6 +105,8 @@ export interface SDJWT {
   keyBindingJWT?: string;
 }
 
+export type CompactSDJWT = string;
+
 export interface SdDigestHashmap {
   [sd_digest: string]: Disclosure;
 }
@@ -220,3 +222,5 @@ export type CreateSDMap = (
   sdMap: SelectiveDisclosableClaims;
   disclosureMap: DisclosureMap;
 };
+
+export type PresentSDJWT = (jwt: string, disclosures: string[], kbjwt?: string) => CompactSDJWT;
