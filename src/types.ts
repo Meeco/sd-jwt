@@ -105,6 +105,8 @@ export interface SDJWT {
   keyBindingJWT?: string;
 }
 
+export type CompactSDJWT = string;
+
 export interface SdDigestHashmap {
   [sd_digest: string]: Disclosure;
 }
@@ -123,6 +125,27 @@ export type DisclosureFrame = {
 export type PackedClaims = {
   _sd?: Array<string>;
   [key: string]: any | unknown;
+};
+
+export type SelectiveDiscloseableArrayItem = {
+  // disclosure.string
+  _sd: string;
+  // disclosure.value
+  '...': SelectiveDisclosableClaims | any;
+};
+
+export type SelectiveDisclosableClaims = {
+  // disclosure.string
+  _sd?: string;
+  [key: string]: SelectiveDisclosableClaims | Array<SelectiveDiscloseableArrayItem | any> | unknown;
+};
+
+export type DisclosureMap = {
+  [sdDigest: string]: {
+    disclosure: string;
+    parentDisclosures: string[];
+    value: any;
+  };
 };
 
 /**
@@ -191,3 +214,13 @@ export type IssueSDJWT = (
   disclosureFrame: DisclosureFrame,
   opts: IssueSDJWTOptions,
 ) => Promise<string>;
+
+export type CreateSDMap = (
+  sdjwt: string,
+  hasher: Hasher,
+) => {
+  sdMap: SelectiveDisclosableClaims;
+  disclosureMap: DisclosureMap;
+};
+
+export type PresentSDJWT = (jwt: string, disclosures: string[], kbjwt?: string) => CompactSDJWT;

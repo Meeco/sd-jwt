@@ -425,6 +425,55 @@ disclosures = [
 ]
 ```
 
+## Selectively Disclosable Map
+### createSDMap
+
+createSDMap returns \
+**sdMap**: an object representation of the SD claims in an sd-jwt \
+**DisclosureMap**: a map of hash values to get the disclosure and its parent disclosures if the SD claim was recursively packed 
+
+```js
+  const { sdMap, disclosureMap } = await createSDMap(sdjwt, hasher);
+
+  // sdMap
+  {
+    nationalities: [
+      { 
+        '...': {}, // item array value (if any recursive sd is present)
+        _sd: 'pFndjkZ_VCzmyTa6UjlZo3dh-ko8aIKQc9DlGzhaVYo' 
+      },
+      { '...': {}, _sd: '7Cf6JkPudry3lcbwHgeZ8khAv1U1OSlerP0VkBJrWZ0' }
+    ],
+    updated_at: { _sd: 'CrQe7S5kqBAHt-nMYXgc6bdt2SH5aTY1sU_M-PgkjPI' },
+    email: { _sd: 'JzYjH4svliH0R3PyEMfeZu6Jt69u5qehZo7F7EPYlSE' },
+  }
+
+  // disclosureMap
+  {
+    'JzYjH4svliH0R3PyEMfeZu6Jt69u5qehZo7F7EPYlSE': {
+      disclosure: 'WyI2SWo3dE0tYTVpVlBHYm9TNXRtdlZBIiwgImVtYWlsIiwgImpvaG5kb2VAZXhhbXBsZS5jb20iXQ',
+      value: 'johndoe@example.com',
+      parentDisclosures: []
+    },
+    'CrQe7S5kqBAHt-nMYXgc6bdt2SH5aTY1sU_M-PgkjPI': {
+      disclosure: 'WyJHMDJOU3JRZmpGWFE3SW8wOXN5YWpBIiwgInVwZGF0ZWRfYXQiLCAxNTcwMDAwMDAwXQ',
+      value: 1570000000,
+      parentDisclosures: []
+    },
+    'pFndjkZ_VCzmyTa6UjlZo3dh-ko8aIKQc9DlGzhaVYo': {
+      disclosure: 'WyJsa2x4RjVqTVlsR1RQVW92TU5JdkNBIiwgIlVTIl0',
+      value: 'US',
+      parentDisclosures: []
+    },
+    '7Cf6JkPudry3lcbwHgeZ8khAv1U1OSlerP0VkBJrWZ0': {
+      disclosure: 'WyJuUHVvUW5rUkZxM0JJZUFtN0FuWEZBIiwgIkRFIl0',
+      value: 'DE',
+      parentDisclosures: []
+    }
+  }
+
+```
+
 ## Development
 
 ### Installation
