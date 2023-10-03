@@ -223,5 +223,3 @@ export type CreateSDMap = (
   sdMap: SelectiveDisclosableClaims;
   disclosureMap: DisclosureMap;
 };
-
-export type PresentSDJWT = (jwt: string, disclosures: string[], kbjwt?: string) => CompactSDJWT;
