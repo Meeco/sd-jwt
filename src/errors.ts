@@ -33,3 +33,9 @@ export class PackSDJWTError extends SDJWTError {
     super(message);
   }
 }
+
+export class CreateDecoyError extends SDJWTError {
+  constructor(message: any) {
+    super(message);
+  }
+}

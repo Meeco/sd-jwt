@@ -1,11 +1,11 @@
-import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, SD_DIGEST, SD_HASH_ALG } from './constants.js';
+import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, SD_DECOY_COUNT, SD_DIGEST, SD_HASH_ALG } from './constants.js';
 import { DecodeSDJWT, DisclosureFrame, PackSDJWT, UnpackSDJWT } from './types.js';
 import {
+  createDecoy,
   createDisclosure,
   createHashMapping,
   decodeDisclosure,
   decodeJWT,
-  generateSalt,
   isObject,
   unpack,
 } from './helpers.js';
@@ -84,10 +84,10 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
 
   if (claims instanceof Array) {
     packedClaims = [];
-
     const recursivelyPackedClaims = {};
+
     for (const key in disclosureFrame) {
-      if (key !== SD_DIGEST) {
+      if (key !== SD_DIGEST && key !== SD_DECOY_COUNT) {
         const idx = parseInt(key);
         const packed = await packSDJWT(claims[idx], disclosureFrame[idx] as DisclosureFrame, hasher, options);
         recursivelyPackedClaims[idx] = packed.claims;
@@ -105,11 +105,16 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
         packedClaims.push(claim);
       }
     }
+
+    const decoys = createDecoy(disclosureFrame[SD_DECOY_COUNT], hasher);
+    decoys.forEach((decoy) => {
+      packedClaims.push({ '...': decoy });
+    });
   } else {
     packedClaims = {};
     const recursivelyPackedClaims = {};
     for (const key in disclosureFrame) {
-      if (key !== SD_DIGEST && key !== '_decoyCount') {
+      if (key !== SD_DIGEST && key !== SD_DECOY_COUNT) {
         const packed = await packSDJWT(claims[key], disclosureFrame[key] as DisclosureFrame, hasher, options);
         recursivelyPackedClaims[key] = packed.claims;
         disclosures = disclosures.concat(packed.disclosures);
@@ -129,13 +134,10 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
       }
     }
 
-    if (disclosureFrame?._decoyCount > 0) {
-      for (let i = 0; i < disclosureFrame._decoyCount; i++) {
-        const salt = generateSalt(16);
-        const decoy = hasher(salt);
-        _sd.push(decoy);
-      }
-    }
+    const decoys = createDecoy(disclosureFrame[SD_DECOY_COUNT], hasher);
+    decoys.forEach((decoy) => {
+      _sd.push(decoy);
+    });
 
     if (_sd.length > 0) {
       packedClaims[SD_DIGEST] = _sd.sort();

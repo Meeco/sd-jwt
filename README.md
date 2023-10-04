@@ -34,8 +34,8 @@ This is an implementation of [SD-JWT (I-D version 05)](https://www.ietf.org/arch
 
 - Release:
   - [x] Create CommonJS and ESM builds
-  - [ ] Documentation
-  - [ ] Publish on npm
+  - [x] Documentation
+  - [x] Publish on npm
 
 ## Disclosure Frame
 To issue or pack claims into a valid SD-JWT we use Disclosure Frame to define which properties/values should be selectively diclosable. \
