@@ -1,5 +1,5 @@
 import { FORMAT_SEPARATOR, SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
-import { DecodeJWTError } from './errors.js';
+import { CreateDecoyError, DecodeJWTError } from './errors.js';
 import {
   CompactSDJWT,
   Disclosure,
@@ -307,4 +307,20 @@ export const combineSDJWT = (jwt: string, disclosures: string[], kbjwt?: string)
   }
 
   return combined;
+};
+
+export const createDecoy = (count: number, hasher: Hasher): string[] => {
+  if (count < 0) {
+    throw new CreateDecoyError('decoy count must not be less than zero');
+  }
+
+  const decoys = [];
+
+  for (let i = 0; i < count; i++) {
+    const salt = generateSalt(16);
+    const decoy = hasher(salt);
+    decoys.push(decoy);
+  }
+
+  return decoys;
 };

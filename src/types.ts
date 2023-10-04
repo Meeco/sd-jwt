@@ -120,6 +120,7 @@ type ArrayIndex = number;
 export type DisclosureFrame = {
   [key: string | ArrayIndex]: DisclosureFrame | unknown;
   _sd?: Array<string | ArrayIndex>;
+  _decoyCount?: number;
 };
 
 export type PackedClaims = {
@@ -222,5 +223,3 @@ export type CreateSDMap = (
   sdMap: SelectiveDisclosableClaims;
   disclosureMap: DisclosureMap;
 };
-
-export type PresentSDJWT = (jwt: string, disclosures: string[], kbjwt?: string) => CompactSDJWT;

@@ -1,6 +1,14 @@
-import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, SD_DIGEST, SD_HASH_ALG } from './constants.js';
+import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, SD_DECOY_COUNT, SD_DIGEST, SD_HASH_ALG } from './constants.js';
 import { DecodeSDJWT, DisclosureFrame, PackSDJWT, UnpackSDJWT } from './types.js';
-import { createDisclosure, createHashMapping, decodeDisclosure, isObject, unpack, decodeJWT } from './helpers.js';
+import {
+  createDecoy,
+  createDisclosure,
+  createHashMapping,
+  decodeDisclosure,
+  decodeJWT,
+  isObject,
+  unpack,
+} from './helpers.js';
 import { DecodeSDJWTError, PackSDJWTError } from './errors.js';
 
 /**
@@ -76,10 +84,10 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
 
   if (claims instanceof Array) {
     packedClaims = [];
-
     const recursivelyPackedClaims = {};
+
     for (const key in disclosureFrame) {
-      if (key !== SD_DIGEST) {
+      if (key !== SD_DIGEST && key !== SD_DECOY_COUNT) {
         const idx = parseInt(key);
         const packed = await packSDJWT(claims[idx], disclosureFrame[idx] as DisclosureFrame, hasher, options);
         recursivelyPackedClaims[idx] = packed.claims;
@@ -97,14 +105,16 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
         packedClaims.push(claim);
       }
     }
+
+    const decoys = createDecoy(disclosureFrame[SD_DECOY_COUNT], hasher);
+    decoys.forEach((decoy) => {
+      packedClaims.push({ '...': decoy });
+    });
   } else {
     packedClaims = {};
-    // const decoys = disclosureFrame[DF_DECOY_COUNT];
-    // delete disclosureFrame[DF_DECOY_COUNT];
-
     const recursivelyPackedClaims = {};
     for (const key in disclosureFrame) {
-      if (key !== SD_DIGEST) {
+      if (key !== SD_DIGEST && key !== SD_DECOY_COUNT) {
         const packed = await packSDJWT(claims[key], disclosureFrame[key] as DisclosureFrame, hasher, options);
         recursivelyPackedClaims[key] = packed.claims;
         disclosures = disclosures.concat(packed.disclosures);
@@ -112,7 +122,6 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
     }
 
     const _sd: string[] = [];
-    // if decoys exist, add decoy
 
     for (const key in claims) {
       const claim = recursivelyPackedClaims[key] ? recursivelyPackedClaims[key] : claims[key];
@@ -125,8 +134,13 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
       }
     }
 
+    const decoys = createDecoy(disclosureFrame[SD_DECOY_COUNT], hasher);
+    decoys.forEach((decoy) => {
+      _sd.push(decoy);
+    });
+
     if (_sd.length > 0) {
-      packedClaims[SD_DIGEST] = _sd;
+      packedClaims[SD_DIGEST] = _sd.sort();
     }
   }
   return { claims: packedClaims, disclosures };

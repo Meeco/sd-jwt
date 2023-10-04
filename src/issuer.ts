@@ -1,5 +1,5 @@
 import { packSDJWT } from './common.js';
-import { SD_JWT_TYPE } from './constants.js';
+import { SD_HASH_ALG, SD_JWT_TYPE } from './constants.js';
 import { IssueSDJWT } from './types.js';
 import { base64encode, combineSDJWT } from './helpers.js';
 import { IssueSDJWTError } from './errors.js';
@@ -22,6 +22,8 @@ export const issueSDJWT: IssueSDJWT = async (header, payload, disclosureFrame, {
   if (cnf) {
     claims.cnf = cnf;
   }
+
+  claims[SD_HASH_ALG] = hash.alg;
 
   const signature = await signer(protectedHeader, claims);
 
