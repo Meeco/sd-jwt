@@ -106,7 +106,7 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
       }
     }
 
-    const decoys = createDecoy(disclosureFrame[SD_DECOY_COUNT], hasher);
+    const decoys = createDecoy(disclosureFrame[SD_DECOY_COUNT], hasher, options?.generateSalt);
     decoys.forEach((decoy) => {
       packedClaims.push({ '...': decoy });
     });
@@ -134,7 +134,7 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
       }
     }
 
-    const decoys = createDecoy(disclosureFrame[SD_DECOY_COUNT], hasher);
+    const decoys = createDecoy(disclosureFrame[SD_DECOY_COUNT], hasher, options?.generateSalt);
     decoys.forEach((decoy) => {
       _sd.push(decoy);
     });

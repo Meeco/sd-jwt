@@ -309,7 +309,7 @@ export const combineSDJWT = (jwt: string, disclosures: string[], kbjwt?: string)
   return combined;
 };
 
-export const createDecoy = (count: number, hasher: Hasher): string[] => {
+export const createDecoy = (count: number, hasher: Hasher, saltGenerator: SaltGenerator = generateSalt): string[] => {
   if (count < 0) {
     throw new CreateDecoyError('decoy count must not be less than zero');
   }
@@ -317,7 +317,7 @@ export const createDecoy = (count: number, hasher: Hasher): string[] => {
   const decoys = [];
 
   for (let i = 0; i < count; i++) {
-    const salt = generateSalt(16);
+    const salt = saltGenerator(16);
     const decoy = hasher(salt);
     decoys.push(decoy);
   }
