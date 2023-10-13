@@ -40,7 +40,7 @@ export function decodeJWT(input: string): UnverifiedJWT {
   }
 
   const { 0: header, 1: payload, 2: signature, length } = input.split('.');
-  if (length < 3) {
+  if (length !== 3) {
     throw new DecodeJWTError('Invalid JWT as input');
   }
 
