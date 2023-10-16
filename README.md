@@ -193,6 +193,9 @@ The `issueSDJWT` function takes a JWT header, payload, and disclosure frame and 
 
 As the library is unopinionated when it comes to how you want to deal with cryptographic functions, so it requires a signer and hasher function to be provided.
 
+Optional Holder key material can be provided in `cnf` options as a `JWK`. \
+Optional custom generateSalt function can also be provided that will be used when creating the claims and decoy claims.
+
 ### Basic Usage
 
 Example Using `jose` lib for signer function & `crypto` for hasher;
@@ -230,12 +233,18 @@ const hasher = (data) => {
   return Promise.resolve(hash);
 };
 
+// Optional
+const cnf = { jwk: holderKey }
+const generateSalt = generateSaltFunction
+
 const sdjwt = await issueSDJWT(header, payload, disclosureFrame, {
   hash: {
     alg: 'sha-256',
     callback: hasher,
   },
-  signer
+  signer,
+  cnf,
+  generateSalt
 });
 
 // Decoded sdjwt.payload
@@ -350,7 +359,13 @@ const result = await unpackSDJWT(sdjwt, disclosures, getHasher);
 
 ## packSDJWT Examples
 
-The `packSDJWT` function takes a claims object and disclosure frame and returns packed claims with selective disclosures encrypted.
+The `packSDJWT` function takes a claims object and disclosure frame and returns packed claims with selective disclosures encrypted. \
+**Required**: a claims object \
+**Required**: a disclosureFrame object \
+**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload \
+*Optional*: options with custom generateSalt function used in creating claims and decoy claims \
+
+Returns SD-JWT and an array of disclosures.
 
 ### Basic Usage
 
@@ -366,7 +381,13 @@ const disclosureFrame = {
   _sd: ['ssn']
 };
 
-const {claims: packed, disclosures} = await packSDJWT(claims, disclosureFrame, hasher);
+const hasher = hasherFunction
+
+const options = {
+  generateSalt: generateSaltFunction
+}
+
+const {claims: packed, disclosures} = await packSDJWT(claims, disclosureFrame, hasher, options);
 ```
 
 This will selectively disclose `ssn` and return the packed claims and disclosures array.
