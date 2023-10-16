@@ -1,4 +1,5 @@
-import { base64decode, base64encode, createDisclosureMap } from './helpers';
+import { CreateDecoyError } from './errors';
+import { base64decode, base64encode, createDecoy, createDisclosureMap } from './helpers';
 import crypto from 'crypto';
 
 const disclosure: string[] = ['5a2W0_NrlEZzfqmk_7Pq-w', 'administeringCentre', 'Praxis Sommergarten'];
@@ -59,5 +60,27 @@ describe('createDisclosureMap', () => {
     const result = createDisclosureMap(disclosures, hasher);
 
     expect(result[recursiveDigest].parentDisclosures).toEqual(['parent']);
+  });
+});
+
+describe('createDecoy', () => {
+  it('should be able to create the correct number of decoys', () => {
+    const decoys = createDecoy(3, hasher);
+
+    expect(decoys.length).toEqual(3);
+  });
+
+  it('should throw an error when the number is less than 0', () => {
+    expect(() => createDecoy(-5, hasher)).toThrow(CreateDecoyError);
+  });
+
+  it('should be able to create decoy with custom generateSaltFunction', () => {
+    const generateSalt = jest.fn(() => 'salt');
+    const hasher = jest.fn((data) => data);
+
+    createDecoy(1, hasher, generateSalt);
+
+    expect(generateSalt).toBeCalled();
+    expect(hasher).toBeCalledWith('salt');
   });
 });
