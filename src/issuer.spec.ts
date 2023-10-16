@@ -15,7 +15,7 @@ describe('issueSDJWT', () => {
   it('should be able to issue a signed compact SD-JWT', async () => {
     const signer = async (header, payload) => {
       const issuerPrivateKey = await importJWK(ISSUER_KEYPAIR.PRIVATE_KEY_JWK, header.alg);
-      return new SignJWT(payload).setProtectedHeader(header).sign(issuerPrivateKey);
+      return (await new SignJWT(payload).setProtectedHeader(header).sign(issuerPrivateKey)).split('.').pop();
     };
 
     const payload = {

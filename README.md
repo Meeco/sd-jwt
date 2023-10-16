@@ -220,7 +220,8 @@ const disclosureFrame = {
 
 const signer = async (header, payload) => {
   const issuerPrivateKey = await importJWK(ISSUER_KEYPAIR.PRIVATE_KEY_JWK, header.alg);
-  return new SignJWT(payload).setProtectedHeader(header).sign(issuerPrivateKey);
+  // Only the signature value should be returned.
+  return (await new SignJWT(payload).setProtectedHeader(header).sign(issuerPrivateKey)).split('.').pop();
 };
 
 const hasher = (data) => {
