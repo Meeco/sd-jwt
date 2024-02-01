@@ -1,5 +1,6 @@
 import { FORMAT_SEPARATOR, SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
 import { CreateDecoyError, DecodeJWTError } from './errors.js';
+import * as base64url from './runtime/base64url.js';
 import {
   CompactSDJWT,
   Disclosure,
@@ -10,7 +11,8 @@ import {
   SdDigestHashmap,
   UnverifiedJWT,
 } from './types.js';
-import { encode, decode } from './runtime/base64url.js';
+
+const decoder = new TextDecoder();
 
 export function generateSalt(length: number): string {
   let salt = '';
@@ -22,11 +24,11 @@ export function generateSalt(length: number): string {
 }
 
 export function base64encode(input: string | Uint8Array): string {
-  return encode(input);
+  return base64url.encode(input);
 }
 
 export function base64decode(input: string): string {
-  return decode(input).toString();
+  return decoder.decode(base64url.decode(input));
 }
 
 export function isObject(input: any): boolean {
