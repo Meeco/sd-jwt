@@ -5,17 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (loosely) adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.0.4 - 2024-02-01
+
+- Bug fix: base64decode for browser runtime
+
 ## 0.0.3 - 2023-10-17
 
 ### Changed
+
 - added feature to add decoy sd digests
 
 ## 0.0.2 - 2023-10-03
 
 ### Changed
+
 - added createSDMap
 
 ### Fixed
+
 - base64 encode/decode support for browser and node runtime
 
 ## 0.0.1 - 2023-09-26
@@ -23,6 +30,7 @@ and this project (loosely) adheres to [Semantic Versioning](https://semver.org/s
 Initial version
 
 ### Changed
+
 - add E2E test
 - removed kb jwt payload checks
 - added error types
