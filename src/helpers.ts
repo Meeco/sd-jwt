@@ -56,31 +56,33 @@ export function decodeJWT(input: string): UnverifiedJWT {
 /**
  * Helpers for UnpackSDJWT
  */
-export const decodeDisclosure = (disclosures: string[]): Array<Disclosure> => {
-  return disclosures.map((d) => {
-    const decoded = JSON.parse(base64decode(d));
+export const decodeDisclosures = (disclosures: string[]): Array<Disclosure> => {
+  return disclosures.map((d) => decodeDisclosure(d));
+};
 
-    let key;
-    let value;
+export const decodeDisclosure = (disclosure: string): Disclosure => {
+  const decoded = JSON.parse(base64decode(disclosure));
 
-    // if disclosure is a value in an array
-    // [<SALT>, <VALUE>]
-    if (decoded.length == 2) {
-      value = decoded[1];
-    }
-    // if disclosure is a value in an object
-    // [<SALT>, <KEY>, <VALUE>]
-    if (decoded.length == 3) {
-      key = decoded[1];
-      value = decoded[2];
-    }
+  let key;
+  let value;
 
-    return {
-      disclosure: d,
-      key,
-      value,
-    };
-  });
+  // if disclosure is a value in an array
+  // [<SALT>, <VALUE>]
+  if (decoded.length == 2) {
+    value = decoded[1];
+  }
+  // if disclosure is a value in an object
+  // [<SALT>, <KEY>, <VALUE>]
+  if (decoded.length == 3) {
+    key = decoded[1];
+    value = decoded[2];
+  }
+
+  return {
+    disclosure,
+    key,
+    value,
+  };
 };
 
 export const createHashMapping = (disclosures: Disclosure[], hasher: Hasher): SdDigestHashmap => {
@@ -229,6 +231,7 @@ export const createDisclosureMap = (disclosures: Disclosure[], hasher: Hasher): 
 
   return map;
 };
+
 export const unpackArrayClaims = (arr: Array<any>, map: SdDigestHashmap) => {
   const unpackedArray: any[] = [];
 

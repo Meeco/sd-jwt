@@ -4,6 +4,12 @@ export class SDJWTError extends Error {
   }
 }
 
+export class SplitSDJWTError extends SDJWTError {
+  constructor(message: any) {
+    super(message);
+  }
+}
+
 export class DecodeJWTError extends SDJWTError {
   constructor(message: any) {
     super(message);
