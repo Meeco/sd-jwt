@@ -8,7 +8,7 @@ import {
   loadPresentation,
   loadVerifiedContents,
 } from './test-utils/helpers';
-import { VerifySdJwtOptions } from './types';
+import { VerifySDJWTOptions } from './types';
 import { verifySDJWT } from './verifier';
 
 const EXAMPLE_WITH_KEY_BINDING = 'complex_ekyc';
@@ -79,7 +79,7 @@ describe('verifySDJWT', () => {
     const example = EXAMPLE_WITHOUT_KEY_BINDING;
     const sdjwt = await loadPresentation(example);
 
-    const kbOpts: VerifySdJwtOptions['kb'] = {
+    const kbOpts: VerifySDJWTOptions['kb'] = {
       verifier: () => Promise.resolve(true),
     };
     expect(async () => {
@@ -91,7 +91,7 @@ describe('verifySDJWT', () => {
     const example = EXAMPLE_WITH_KEY_BINDING;
     const sdjwt = await loadPresentation(example);
 
-    const kbOpts: VerifySdJwtOptions['kb'] = {
+    const kbOpts: VerifySDJWTOptions['kb'] = {
       verifier: getKbVerifier('invalid_aud', 'invalid_nonce'),
     };
     expect(async () => {

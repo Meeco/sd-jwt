@@ -1,5 +1,5 @@
 import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, SD_DECOY_COUNT, SD_DIGEST, SD_HASH_ALG } from './constants.js';
-import { PackSDJWTError, SplitSDJWTError } from './errors.js';
+import { PackSDJWTError, SDJWTInvalidFormatError } from './errors.js';
 import {
   createDecoy,
   createDisclosure,
@@ -27,7 +27,7 @@ export const splitSDJWT = (sdjwt: CompactSDJWT) => {
   // disclosures may be empty
   // but the separator before the key binding jwt must exist
   if (separated.length < 2) {
-    throw new SplitSDJWTError('Not a valid SD-JWT');
+    throw new SDJWTInvalidFormatError('Not a valid SD-JWT');
   }
 
   const jwt = separated.shift();
@@ -49,10 +49,10 @@ export const splitSDJWT = (sdjwt: CompactSDJWT) => {
 export const decodeSDJWT: DecodeSDJWT = (sdJWT) => {
   const { jwt, disclosures, keyBindingJWT } = splitSDJWT(sdJWT);
 
-  const { payload: unverifiedInputSdJwt } = decodeJWT(jwt);
+  const { payload: unverifiedInputSDJWT } = decodeJWT(jwt);
 
   return {
-    unverifiedInputSdJwt,
+    unverifiedInputSDJWT,
     disclosures: decodeDisclosures(disclosures),
     keyBindingJWT: keyBindingJWT,
   };

@@ -63,26 +63,25 @@ export const decodeDisclosures = (disclosures: string[]): Array<Disclosure> => {
 export const decodeDisclosure = (disclosure: string): Disclosure => {
   const decoded = JSON.parse(base64decode(disclosure));
 
-  let key;
-  let value;
-
   // if disclosure is a value in an array
   // [<SALT>, <VALUE>]
   if (decoded.length == 2) {
-    value = decoded[1];
+    return {
+      disclosure,
+      key: null,
+      value: decoded[1],
+    };
   }
+
   // if disclosure is a value in an object
   // [<SALT>, <KEY>, <VALUE>]
   if (decoded.length == 3) {
-    key = decoded[1];
-    value = decoded[2];
+    return {
+      disclosure,
+      key: decoded[1],
+      value: decoded[2],
+    };
   }
-
-  return {
-    disclosure,
-    key,
-    value,
-  };
 };
 
 export const createHashMapping = (disclosures: Disclosure[], hasher: Hasher): SdDigestHashmap => {

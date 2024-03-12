@@ -4,7 +4,7 @@ export class SDJWTError extends Error {
   }
 }
 
-export class SplitSDJWTError extends SDJWTError {
+export class SDJWTInvalidFormatError extends SDJWTError {
   constructor(message: any) {
     super(message);
   }

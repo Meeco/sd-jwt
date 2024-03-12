@@ -100,7 +100,7 @@ export interface Disclosure {
 }
 
 export interface SDJWT {
-  unverifiedInputSdJwt: SDJWTPayload;
+  unverifiedInputSDJWT: SDJWTPayload;
   disclosures: Disclosure[];
   keyBindingJWT?: string;
 }
@@ -170,7 +170,7 @@ export interface IssueSDJWTOptions {
   generateSalt?: SaltGenerator;
 }
 
-export interface VerifySdJwtOptions {
+export interface VerifySDJWTOptions {
   kb?: {
     verifier?: KeyBindingVerifier;
   };
@@ -206,7 +206,7 @@ export type VerifySDJWT = (
   sdjwt: string,
   verifier: Verifier,
   getHasher: GetHasher,
-  opts?: VerifySdJwtOptions,
+  opts?: VerifySDJWTOptions,
 ) => Promise<SDJWTPayload>;
 
 export type IssueSDJWT = (

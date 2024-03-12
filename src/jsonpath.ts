@@ -6,18 +6,16 @@ import { Disclosure, GetHasher, Hasher } from './types';
 export type DigestMap = Map<string, Disclosure>;
 
 type getDisclosuresOptions = {
-  ignoreInvalid?: boolean;
+  ignoreInvalidJsonpath?: boolean;
 };
 
 /**
  * List and Retrieve Disclosures using
  * Explicit dot-notation JSONpath expression
  */
-export class SdJwtDisclosureParser {
+export class SDJWTDisclosureParser {
   readonly jwt: object;
   readonly digestMap: DigestMap;
-
-  private parsed: boolean = false;
 
   // Map<jsonpath, digest>
   private jsonpathMap: Map<string, string> = new Map();
@@ -28,22 +26,11 @@ export class SdJwtDisclosureParser {
   constructor({ jwt, digestMap }: { jwt: object; digestMap: DigestMap }) {
     this.jwt = jwt;
     this.digestMap = digestMap;
-  }
 
-  public parse() {
-    if (this.parsed) return this;
-
-    this.objectTraverse(this.jwt);
-    this.parsed = true;
-
-    return this;
+    this.parse();
   }
 
   public listDisclosureJsonPaths() {
-    if (!this.parsed) {
-      this.parse();
-    }
-
     const list = {};
 
     this.jsonpathMap.forEach((value, key) => {
@@ -55,14 +42,10 @@ export class SdJwtDisclosureParser {
   }
 
   public getDisclosuresFromJsonpaths(disclosuresJsonpath: string[], opts?: getDisclosuresOptions) {
-    if (!this.parsed) {
-      this.parse();
-    }
-
     const digests = disclosuresJsonpath.map((jsonpath) => {
       const digest = this.jsonpathMap.get(jsonpath.startsWith('$.') ? jsonpath : '$.' + jsonpath);
 
-      if (!opts?.ignoreInvalid && !digest) {
+      if (!opts?.ignoreInvalidJsonpath && !digest) {
         throw new Error(`Cannot find disclosure for provided jsonpath ${jsonpath}`);
       }
 
@@ -80,6 +63,10 @@ export class SdJwtDisclosureParser {
     const disclosures = [...selectedDigests].map((digest: string) => this.digestMap.get(digest)?.disclosure);
 
     return disclosures;
+  }
+
+  private parse() {
+    this.objectTraverse(this.jwt);
   }
 
   private parseSdDigest(digest: string, parent = null, pathname = '$') {
@@ -152,7 +139,7 @@ export class SdJwtDisclosureParser {
 
 export class SDJsonpath {
   private static getParser({ jwt, digestMap }) {
-    return new SdJwtDisclosureParser({ jwt, digestMap }).parse();
+    return new SDJWTDisclosureParser({ jwt, digestMap });
   }
 
   static fromJWT(jwt: object, disclosures: string[], hasher: Hasher) {

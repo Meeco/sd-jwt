@@ -1,7 +1,7 @@
 import { decodeSDJWT, unpackSDJWT } from './common.js';
 import { FORMAT_SEPARATOR } from './constants.js';
-import { VerifySDJWT } from './types.js';
 import { VerifySDJWTError } from './errors.js';
+import { VerifySDJWT } from './types.js';
 
 /**
  * Verifies base64 encoded SD JWT against issuer's public key
@@ -31,7 +31,7 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
     throw new VerifySDJWTError('GetHasher must return a function');
   }
 
-  const { unverifiedInputSdJwt: jwt, disclosures, keyBindingJWT } = decodeSDJWT(sdjwt);
+  const { unverifiedInputSDJWT: jwt, disclosures, keyBindingJWT } = decodeSDJWT(sdjwt);
 
   if (opts?.kb) {
     const kb = opts.kb;

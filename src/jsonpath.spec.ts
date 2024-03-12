@@ -1,11 +1,5 @@
-import crypto from 'crypto';
-
-import { splitSDJWT } from './common.js';
-import { base64encode, decodeJWT } from './helpers.js';
-import { DigestMap, SDJsonpath, SdJwtDisclosureParser } from './jsonpath.js';
+import { DigestMap, SDJWTDisclosureParser } from './jsonpath.js';
 import {
-  COMPLEX_SD_JWT,
-  COMPLEX_SD_JWT_DISCLOSURE_JSONPATHS,
   buildMockArrayItem,
   mockArrayItem,
   mockBooleanDisclosure,
@@ -13,9 +7,9 @@ import {
   mockObjectDisclosure,
   mockStringDisclosure,
 } from './test-utils/index.js';
-import { Disclosure, GetHasher } from './types.js';
+import { Disclosure } from './types.js';
 
-describe('#SdJwtDisclosureParser', () => {
+describe('#SDJWTDisclosureParser', () => {
   describe('listDisclosureJsonPaths', () => {
     describe('Selectively Disclosable Claims', () => {
       it('single claim', () => {
@@ -25,7 +19,7 @@ describe('#SdJwtDisclosureParser', () => {
 
         const digestMap: DigestMap = new Map([['sd-hash-1', mockStringDisclosure]]);
 
-        const disclosures = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
+        const disclosures = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
 
         expect(disclosures).toEqual({
           '$.stringClaim': mockStringDisclosure.value,
@@ -44,7 +38,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-4', mockBooleanDisclosure],
         ]);
 
-        const disclosures = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
+        const disclosures = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
 
         expect(disclosures).toEqual({
           '$.stringClaim': mockStringDisclosure.value,
@@ -61,7 +55,7 @@ describe('#SdJwtDisclosureParser', () => {
 
         const digestMap: DigestMap = new Map([['sd-hash', mockArrayItem]]);
 
-        const disclosures = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
+        const disclosures = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
 
         expect(disclosures).toEqual({
           '$.claim[0]': mockArrayItem.value,
@@ -87,7 +81,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-4', mockArrayItem],
         ]);
 
-        const disclosures = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
+        const disclosures = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
 
         expect(disclosures).toEqual({
           '$.claim[0]': mockArrayItem.value,
@@ -108,7 +102,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-2', mockArrayItem],
         ]);
 
-        const disclosures = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
+        const disclosures = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
 
         expect(disclosures).toEqual({
           '$.stringClaim': mockStringDisclosure.value,
@@ -127,7 +121,7 @@ describe('#SdJwtDisclosureParser', () => {
 
         const digestMap: DigestMap = new Map([['sd-hash-1', mockStringDisclosure]]);
 
-        const disclosures = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
+        const disclosures = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
 
         expect(disclosures).toEqual({
           '$.parent.stringClaim': mockStringDisclosure.value,
@@ -147,7 +141,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-2', mockBooleanDisclosure],
         ]);
 
-        const disclosures = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
+        const disclosures = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
 
         expect(disclosures).toEqual({
           '$.parent.stringClaim': mockStringDisclosure.value,
@@ -167,7 +161,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-2', mockArrayItem],
         ]);
 
-        const disclosures = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
+        const disclosures = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
 
         expect(disclosures).toEqual({
           '$.parent.claim[0].stringClaim': mockStringDisclosure.value,
@@ -187,7 +181,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-2', mockArrayItem],
         ]);
 
-        const disclosures = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
+        const disclosures = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
 
         expect(disclosures).toEqual({
           '$.parent.claim[0][0].stringClaim': mockStringDisclosure.value,
@@ -215,7 +209,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-2', mockStringDisclosure],
         ]);
 
-        const disclosures = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
+        const disclosures = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
 
         expect(disclosures).toEqual({
           '$.recursive': mockRecursiveDisclosure.value,
@@ -241,7 +235,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-2', mockStringDisclosure],
         ]);
 
-        const disclosures = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
+        const disclosures = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
 
         expect(disclosures).toEqual({
           '$.claim[0]': mockRecursiveDisclosure.value,
@@ -265,7 +259,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-2', mockArrayItem],
         ]);
 
-        const disclosures = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
+        const disclosures = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
 
         expect(disclosures).toEqual({
           '$.parent': mockRecursiveDisclosure.value,
@@ -291,7 +285,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-2', mockArrayItem],
         ]);
 
-        const disclosures = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
+        const disclosures = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap }).listDisclosureJsonPaths();
 
         expect(disclosures).toEqual({
           '$.recursive[0]': mockRecursiveDisclosure.value,
@@ -314,7 +308,7 @@ describe('#SdJwtDisclosureParser', () => {
         ['sd-hash-4', mockBooleanDisclosure],
       ]);
 
-      const parser = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).parse();
+      const parser = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap });
 
       it('selects one claim', () => {
         const selectedClaims = ['$.stringClaim'];
@@ -335,9 +329,9 @@ describe('#SdJwtDisclosureParser', () => {
         );
       });
 
-      it('ignore invalid jsonpath claim with ignoreInvalid option', () => {
+      it('ignore invalid jsonpath claim with ignoreInvalidJsonpath option', () => {
         const selectedClaims = ['$.invalidClaim'];
-        const disclosures = parser.getDisclosuresFromJsonpaths(selectedClaims, { ignoreInvalid: true });
+        const disclosures = parser.getDisclosuresFromJsonpaths(selectedClaims, { ignoreInvalidJsonpath: true });
         expect(disclosures).toEqual([]);
       });
 
@@ -367,7 +361,7 @@ describe('#SdJwtDisclosureParser', () => {
         ['sd-hash-4', buildMockArrayItem({ disclosure: 'mock-array-item-index-5' })],
       ]);
 
-      const parser = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).parse();
+      const parser = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap });
 
       it('select one claim', () => {
         const selectedClaims = ['$.claim[4]'];
@@ -398,7 +392,7 @@ describe('#SdJwtDisclosureParser', () => {
         ['sd-hash-3', mockBooleanDisclosure],
       ]);
 
-      const parser = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).parse();
+      const parser = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap });
 
       it('select claims', () => {
         expect(parser.getDisclosuresFromJsonpaths(['$.parent.claim[0].stringClaim'])).toEqual([
@@ -440,7 +434,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-2', mockStringDisclosure],
         ]);
 
-        const parser = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).parse();
+        const parser = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap });
 
         expect(parser.getDisclosuresFromJsonpaths(['$.recursive'])).toEqual([mockRecursiveDisclosure.disclosure]);
 
@@ -471,7 +465,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-2', mockStringDisclosure],
         ]);
 
-        const parser = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).parse();
+        const parser = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap });
 
         expect(parser.getDisclosuresFromJsonpaths(['$.claim[0]'])).toEqual([mockRecursiveDisclosure.disclosure]);
 
@@ -500,7 +494,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-2', mockArrayItem],
         ]);
 
-        const parser = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).parse();
+        const parser = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap });
 
         expect(parser.getDisclosuresFromJsonpaths(['$.parent'])).toEqual([mockRecursiveDisclosure.disclosure]);
 
@@ -531,7 +525,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-2', mockArrayItem],
         ]);
 
-        const parser = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).parse();
+        const parser = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap });
 
         expect(parser.getDisclosuresFromJsonpaths(['$.recursive[0]'])).toEqual([mockRecursiveDisclosure.disclosure]);
 
@@ -580,7 +574,7 @@ describe('#SdJwtDisclosureParser', () => {
           ['sd-hash-4', mockStringDisclosure],
         ]);
 
-        const parser = new SdJwtDisclosureParser({ jwt: sdjwt, digestMap }).parse();
+        const parser = new SDJWTDisclosureParser({ jwt: sdjwt, digestMap });
 
         expect(parser.getDisclosuresFromJsonpaths(['$.depth-1'])).toEqual([mockRecursiveDisclosure1.disclosure]);
 
@@ -606,51 +600,5 @@ describe('#SdJwtDisclosureParser', () => {
         );
       });
     });
-  });
-});
-
-const hasher = (data) => {
-  const digest = crypto.createHash('sha256').update(data).digest();
-  return base64encode(digest);
-};
-
-const getHasher: GetHasher = () => Promise.resolve(hasher);
-
-describe('#SDJsonpath', () => {
-  it('#fromJWT', () => {
-    const { jwt, disclosures, keyBindingJWT: _kbjwt } = splitSDJWT(COMPLEX_SD_JWT);
-    const { payload } = decodeJWT(jwt);
-
-    const jsonpaths = SDJsonpath.fromJWT(payload, disclosures, hasher);
-
-    expect(jsonpaths).toEqual(COMPLEX_SD_JWT_DISCLOSURE_JSONPATHS);
-  });
-
-  it('#fromCompactJWT', async () => {
-    const jsonpaths = await SDJsonpath.fromCompactJWT(COMPLEX_SD_JWT, getHasher);
-
-    expect(jsonpaths).toEqual(COMPLEX_SD_JWT_DISCLOSURE_JSONPATHS);
-  });
-
-  it('#getJWT', async () => {
-    const selectedClaims = [
-      '$.msisdn',
-      '$.verified_claims.verification.evidence[0].time',
-      '$.verified_claims.verification.evidence[0].document',
-    ];
-
-    const jwtWithSelectedClaims = await SDJsonpath.getJWT(COMPLEX_SD_JWT, selectedClaims, getHasher);
-
-    const { jwt: originalJwt } = splitSDJWT(COMPLEX_SD_JWT);
-
-    const { jwt, disclosures } = splitSDJWT(jwtWithSelectedClaims);
-
-    expect(jwt).toEqual(originalJwt);
-
-    expect(disclosures).toEqual([
-      'WyJDOUdTb3VqdmlKcXVFZ1lmb2pDYjFBIiwgIm1zaXNkbiIsICI0OTEyMzQ1Njc4OSJd',
-      'WyJRZ19PNjR6cUF4ZTQxMmExMDhpcm9BIiwgInRpbWUiLCAiMjAxMi0wNC0yMlQxMTozMFoiXQ',
-      'WyJBSngtMDk1VlBycFR0TjRRTU9xUk9BIiwgImRvY3VtZW50IiwgeyJ0eXBlIjogImlkY2FyZCIsICJpc3N1ZXIiOiB7Im5hbWUiOiAiU3RhZHQgQXVnc2J1cmciLCAiY291bnRyeSI6ICJERSJ9LCAibnVtYmVyIjogIjUzNTU0NTU0IiwgImRhdGVfb2ZfaXNzdWFuY2UiOiAiMjAxMC0wMy0yMyIsICJkYXRlX29mX2V4cGlyeSI6ICIyMDIwLTAzLTIyIn1d',
-    ]);
   });
 });
