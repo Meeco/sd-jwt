@@ -17,7 +17,7 @@ describe('decodeSDJWT', () => {
     const sdjwt = await loadIssuedSDJWT(example);
     const expectedJWTPayload = await loadSDJWTPayload(example);
 
-    const { unverifiedInputSdJwt: result } = decodeSDJWT(sdjwt);
+    const { unverifiedInputSDJWT: result } = decodeSDJWT(sdjwt);
     expect(result).toEqual(expectedJWTPayload);
   });
 
@@ -45,8 +45,8 @@ describe('unpackSDJWT', () => {
     const sdjwt = await loadPresentation(example);
     const expectedSDJWT = await loadVerifiedContents(example);
 
-    const { unverifiedInputSdJwt, disclosures } = decodeSDJWT(sdjwt);
-    const result = await unpackSDJWT(unverifiedInputSdJwt, disclosures, getHasher);
+    const { unverifiedInputSDJWT, disclosures } = decodeSDJWT(sdjwt);
+    const result = await unpackSDJWT(unverifiedInputSDJWT, disclosures, getHasher);
     expect(result).toEqual(expectedSDJWT);
   });
 });

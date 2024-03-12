@@ -1,15 +1,44 @@
 import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, SD_DECOY_COUNT, SD_DIGEST, SD_HASH_ALG } from './constants.js';
-import { DecodeSDJWT, DisclosureFrame, PackSDJWT, UnpackSDJWT } from './types.js';
+import { PackSDJWTError, SDJWTInvalidFormatError } from './errors.js';
 import {
   createDecoy,
   createDisclosure,
   createHashMapping,
-  decodeDisclosure,
+  decodeDisclosures,
   decodeJWT,
   isObject,
   unpack,
 } from './helpers.js';
-import { DecodeSDJWTError, PackSDJWTError } from './errors.js';
+import { CompactSDJWT, DecodeSDJWT, DisclosureFrame, PackSDJWT, UnpackSDJWT } from './types.js';
+
+/**
+ * Splits compact SD-JWT into parts based on the FORMAT_SEPARATOR
+ *
+ * @param sdJWT
+ * @returns {
+ *  signedJWT,
+ *  disclosures,
+ *  kbJWT
+ * }
+ */
+export const splitSDJWT = (sdjwt: CompactSDJWT) => {
+  const separated = sdjwt.split(FORMAT_SEPARATOR);
+
+  // disclosures may be empty
+  // but the separator before the key binding jwt must exist
+  if (separated.length < 2) {
+    throw new SDJWTInvalidFormatError('Not a valid SD-JWT');
+  }
+
+  const jwt = separated.shift();
+  const keyBindingJWT = separated.pop();
+
+  return {
+    jwt: jwt,
+    disclosures: separated,
+    keyBindingJWT: keyBindingJWT,
+  };
+};
 
 /**
  * Splits the compact SD-JWT into parts based on the FORMAT_SEPARATOR
@@ -18,21 +47,14 @@ import { DecodeSDJWTError, PackSDJWTError } from './errors.js';
  * @returns jwt input payload, an array of disclosures and a compact key binding jwt if present
  */
 export const decodeSDJWT: DecodeSDJWT = (sdJWT) => {
-  const s = sdJWT.split(FORMAT_SEPARATOR);
+  const { jwt, disclosures, keyBindingJWT } = splitSDJWT(sdJWT);
 
-  // disclosures may be empty
-  // but the separator before the key binding jwt must exist
-  if (s.length < 2) {
-    throw new DecodeSDJWTError('Not a valid SD-JWT');
-  }
-  const { payload: unverifiedInputSdJwt } = decodeJWT(s.shift() || '');
-  const keyBindingJWT = s.pop();
-  const disclosures = decodeDisclosure(s);
+  const { payload: unverifiedInputSDJWT } = decodeJWT(jwt);
 
   return {
-    unverifiedInputSdJwt,
-    disclosures,
-    keyBindingJWT,
+    unverifiedInputSDJWT,
+    disclosures: decodeDisclosures(disclosures),
+    keyBindingJWT: keyBindingJWT,
   };
 };
 
