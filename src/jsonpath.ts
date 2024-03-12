@@ -13,7 +13,7 @@ type getDisclosuresOptions = {
  * List and Retrieve Disclosures using
  * Explicit dot-notation JSONpath expression
  */
-export class SDJWTDisclosureParser {
+export class SDJWTDisclosureStruct {
   readonly jwt: object;
   readonly digestMap: DigestMap;
 
@@ -139,7 +139,7 @@ export class SDJWTDisclosureParser {
 
 export class SDJsonpath {
   private static getParser({ jwt, digestMap }) {
-    return new SDJWTDisclosureParser({ jwt, digestMap });
+    return new SDJWTDisclosureStruct({ jwt, digestMap });
   }
 
   static fromJWT(jwt: object, disclosures: string[], hasher: Hasher) {
