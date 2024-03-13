@@ -1,7 +1,7 @@
-import { splitSDJWT } from './common';
-import { SD_DIGEST, SD_LIST_PREFIX } from './constants';
-import { combineSDJWT, decodeDisclosure, decodeJWT, isObject } from './helpers';
-import { Disclosure, GetHasher, Hasher } from './types';
+import { splitSDJWT } from './common.js';
+import { SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
+import { combineSDJWT, decodeDisclosure, decodeJWT, isObject } from './helpers.js';
+import { Disclosure, GetHasher, Hasher } from './types.js';
 
 export type DigestMap = Map<string, Disclosure>;
 
