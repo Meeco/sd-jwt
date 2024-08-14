@@ -56,7 +56,7 @@ export async function loadKeyBindingJWT(name) {
   try {
     const kbjwt = await loadExample(name, Example.KB_JWT_PAYLOAD);
     return JSON.parse(kbjwt);
-  } catch (e) {
+  } catch (_e) {
     return {};
   }
 }
