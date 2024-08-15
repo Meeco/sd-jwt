@@ -75,7 +75,7 @@ describe('verifySDJWT', () => {
     expect(result).toEqual(expectedResult);
   });
 
-  xit('should error when checking nonce and aud without a keybind', async () => {
+  it('should error when checking nonce and aud without a keybind', async () => {
     const example = EXAMPLE_WITHOUT_KEY_BINDING;
     const sdjwt = await loadPresentation(example);
 
