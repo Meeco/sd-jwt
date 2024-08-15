@@ -100,6 +100,7 @@ export interface Disclosure {
 }
 
 export interface SDJWT {
+  header: JWTHeaderParameters;
   unverifiedInputSDJWT: SDJWTPayload;
   disclosures: Disclosure[];
   keyBindingJWT?: string;

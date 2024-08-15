@@ -49,9 +49,10 @@ export const splitSDJWT = (sdjwt: CompactSDJWT) => {
 export const decodeSDJWT: DecodeSDJWT = (sdJWT) => {
   const { jwt, disclosures, keyBindingJWT } = splitSDJWT(sdJWT);
 
-  const { payload: unverifiedInputSDJWT } = decodeJWT(jwt);
+  const { payload: unverifiedInputSDJWT, header } = decodeJWT(jwt);
 
   return {
+    header,
     unverifiedInputSDJWT,
     disclosures: decodeDisclosures(disclosures),
     keyBindingJWT: keyBindingJWT,

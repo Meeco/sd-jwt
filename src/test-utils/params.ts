@@ -19,6 +19,7 @@ export enum Example {
   SD_JWT = 'sd_jwt_issuance.txt',
   SD_JWT_JWS = 'sd_jwt_jws_part.txt',
   SD_JWT_PAYLOAD = 'sd_jwt_payload.json',
+  SD_JWT_HEADER = 'sd_jwt_header.json',
   SD_JWT_PRESENTATION = 'sd_jwt_presentation.txt',
   USER_CLAIMS = 'user_claims.json',
   VERIFIED_CONTENTS = 'verified_contents.json',

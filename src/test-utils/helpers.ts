@@ -1,7 +1,7 @@
-import { readFile } from 'node:fs/promises';
 import { readdirSync } from 'fs';
-import { Example, EXAMPLES_DIRECTORY, ISSUER_PUBLIC_KEY, TEST_CASES_DIRECTORY } from './params';
 import { importJWK } from 'jose';
+import { readFile } from 'node:fs/promises';
+import { Example, EXAMPLES_DIRECTORY, ISSUER_PUBLIC_KEY, TEST_CASES_DIRECTORY } from './params';
 
 function getDirectory(dirname: string) {
   return readdirSync(dirname, { withFileTypes: true })
@@ -32,6 +32,11 @@ export async function loadIssuedSDJWT(name) {
   return sdjwt.replace(/\s/g, '');
 }
 
+export async function loadSDJWTHeader(name) {
+  const sdjwtHeader = await loadExample(name, Example.SD_JWT_HEADER);
+  return JSON.parse(sdjwtHeader);
+}
+
 export async function loadSDJWTPayload(name) {
   const sdjwtPayload = await loadExample(name, Example.SD_JWT_PAYLOAD);
   return JSON.parse(sdjwtPayload);
@@ -51,7 +56,7 @@ export async function loadKeyBindingJWT(name) {
   try {
     const kbjwt = await loadExample(name, Example.KB_JWT_PAYLOAD);
     return JSON.parse(kbjwt);
-  } catch (e) {
+  } catch (_e) {
     return {};
   }
 }

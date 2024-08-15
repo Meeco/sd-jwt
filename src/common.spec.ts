@@ -5,6 +5,7 @@ import {
   getExamples,
   loadIssuedSDJWT,
   loadPresentation,
+  loadSDJWTHeader,
   loadSDJWTPayload,
   loadVerifiedContents,
 } from './test-utils/helpers';
@@ -16,15 +17,18 @@ describe('decodeSDJWT', () => {
   it.each(examples)('should get payload %s', async (example) => {
     const sdjwt = await loadIssuedSDJWT(example);
     const expectedJWTPayload = await loadSDJWTPayload(example);
+    const expectedJWTHeader = await loadSDJWTHeader(example);
 
-    const { unverifiedInputSDJWT: result } = decodeSDJWT(sdjwt);
-    expect(result).toEqual(expectedJWTPayload);
+    const { unverifiedInputSDJWT: payload, header } = decodeSDJWT(sdjwt);
+
+    expect(payload).toEqual(expectedJWTPayload);
+    expect(header).toEqual(expectedJWTHeader);
   });
 
   it('should throw an error for invalid SD-JWT', () => {
     expect(() => {
       decodeSDJWT(INVALID_JWT);
-    }).toThrowError();
+    }).toThrow();
   });
 });
 

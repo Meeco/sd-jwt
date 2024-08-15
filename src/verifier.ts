@@ -55,7 +55,7 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
         if (!verifiedKBJWT) {
           throw new VerifySDJWTError('KB JWT is invalid');
         }
-      } catch (e) {
+      } catch (_e) {
         throw new VerifySDJWTError('Failed to verify Key Binding JWT');
       }
     }
@@ -68,7 +68,7 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
     if (!verified) {
       throw new VerifySDJWTError('Failed to verify SD-JWT');
     }
-  } catch (e) {
+  } catch (_e) {
     throw new VerifySDJWTError('Failed to verify SD-JWT');
   }
 
