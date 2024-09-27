@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { DisclosureFrame } from 'dist/types';
 import { decodeSDJWT, packSDJWT, unpackSDJWT } from './common';
 import { base64encode } from './helpers';
 import {
@@ -74,7 +75,7 @@ describe('packSDJWT', () => {
 
   it('should be able to pack a simple claim', async () => {
     const claims = { id: 123 };
-    const disclosureFrame = { _sd: ['id'] };
+    const disclosureFrame: DisclosureFrame = { _sd: ['id'] };
     const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
 
     const disclosureArray = ['salt', 'id', 123];
@@ -87,7 +88,7 @@ describe('packSDJWT', () => {
 
   it('should be able to pack an array', async () => {
     const claims = { items: [1, 2, 3] };
-    const disclosureFrame = {
+    const disclosureFrame: DisclosureFrame = {
       items: { _sd: [0, 1] },
     };
     const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
@@ -104,7 +105,7 @@ describe('packSDJWT', () => {
 
   it('should be able to recursively pack an array', async () => {
     const claims = { items: [1, 2, { id: 123 }] };
-    const disclosureFrame = {
+    const disclosureFrame: DisclosureFrame = {
       items: {
         _sd: [0, 2],
         2: { _sd: ['id'] },
@@ -128,7 +129,7 @@ describe('packSDJWT', () => {
 
   it('should be able to pack nested object', async () => {
     const claims = { items: { sub: { iss: 1, aud: 2 } } };
-    const disclosureFrame = {
+    const disclosureFrame: DisclosureFrame = {
       items: {
         sub: {
           _sd: ['iss'],
@@ -157,7 +158,7 @@ describe('packSDJWT', () => {
     const claims = {
       items: [[1, 2], 3],
     };
-    const disclosureFrame = {
+    const disclosureFrame: DisclosureFrame = {
       items: {
         _sd: [0],
         0: { _sd: [0, 1] },
@@ -300,7 +301,16 @@ describe('packSDJWT', () => {
   describe('decoys', () => {
     it('should be able to generate decoys', async () => {
       const claims = { id: 123 };
-      const disclosureFrame = { _sd: ['id'], _decoyCount: 5 };
+      const disclosureFrame: DisclosureFrame = { _sd: ['id'], _sd_decoy: 5 };
+      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
+
+      expect(disclosures.length).toBe(1);
+      expect(result._sd.length).toBe(6);
+    });
+
+    it('still supports old _decoyCount parameter', async () => {
+      const claims = { id: 123 };
+      const disclosureFrame: DisclosureFrame = { _sd: ['id'], _decoyCount: 5 };
       const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
 
       expect(disclosures.length).toBe(1);
@@ -309,16 +319,23 @@ describe('packSDJWT', () => {
 
     it('should be able to generate decoys in an array', async () => {
       const claims = { arr: [1, 2, 3] };
-      const disclosureFrame = { arr: { _sd: [0, 1, 2], _decoyCount: 5 } };
+      const disclosureFrame: DisclosureFrame = { arr: { _sd: [0, 1, 2], _sd_decoy: 5 } };
       const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
 
       expect(disclosures.length).toBe(3);
       expect(result.arr.length).toBe(8);
     });
 
+    it('throws error if both _sd_decoy and _decoyCount are provided', () => {
+      const claims = { id: 123 };
+      const disclosureFrame: DisclosureFrame = { _sd: ['id'], _sd_decoy: 1, _decoyCount: 2 };
+
+      expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt })).rejects.toThrow();
+    });
+
     it('should throw an error when provided with a negative decoy count', () => {
       const claims = { id: 123 };
-      const disclosureFrame = { _sd: ['id'], _decoyCount: -5 };
+      const disclosureFrame = { _sd: ['id'], _sd_decoy: -5 };
 
       expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt })).rejects.toThrow();
     });

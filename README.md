@@ -45,14 +45,14 @@ To issue or pack claims into a valid SD-JWT we use Disclosure Frame to define wh
 It follows the following format:
 ```typescript
 type ArrayIndex = number;
-type DisclosureFrame = {
-  [key: string | ArrayIndex]: DisclosureFrame | unknown;
-  _sd?: Array<string | ArrayIndex>;
-  _decoyCount?: number;
+type DisclosureFrameSDAttributes = { _sd?: Array<string | ArrayIndex>; _sd_decoy?: number };
+export type DisclosureFrame =
+  | ({ [key: string | ArrayIndex]: DisclosureFrame } & DisclosureFrameSDAttributes)
+  | DisclosureFrameSDAttributes;
 };
 ```
 
-`_decoyCount` is an optional property that defines the number of decoy digests to add.
+`_sd_decoy` is an optional property that defines the number of decoy digests to add.
 
 ### Examples:
 
