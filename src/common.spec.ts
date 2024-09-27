@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-import { DisclosureFrame } from 'dist/types';
 import { decodeSDJWT, packSDJWT, unpackSDJWT } from './common';
 import { base64encode } from './helpers';
 import {
@@ -11,6 +10,7 @@ import {
   loadVerifiedContents,
 } from './test-utils/helpers';
 import { INVALID_JWT } from './test-utils/params';
+import { DisclosureFrame } from './types';
 
 const examples = getExamples();
 
