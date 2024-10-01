@@ -118,15 +118,21 @@ export interface DisclosureClaim {
 }
 
 type ArrayIndex = number;
-export type DisclosureFrame = {
-  [key: string | ArrayIndex]: DisclosureFrame | unknown;
+type DisclosureFrameSDAttributes = {
   _sd?: Array<string | ArrayIndex>;
+  _sd_decoy?: number;
+  /**
+   * @deprecated use _sd_decoy instead.
+   */
   _decoyCount?: number;
 };
+export type DisclosureFrame =
+  | ({ [key: string | ArrayIndex]: DisclosureFrame } & DisclosureFrameSDAttributes)
+  | DisclosureFrameSDAttributes;
 
 export type PackedClaims = {
   _sd?: Array<string>;
-  [key: string]: any | unknown;
+  [key: string]: any;
 };
 
 export type SelectiveDiscloseableArrayItem = {
@@ -136,11 +142,15 @@ export type SelectiveDiscloseableArrayItem = {
   '...': SelectiveDisclosableClaims | any;
 };
 
-export type SelectiveDisclosableClaims = {
+type SelectiveDisclosableClaimsSDAttributes = {
   // disclosure.string
   _sd?: string;
-  [key: string]: SelectiveDisclosableClaims | Array<SelectiveDiscloseableArrayItem | any> | unknown;
 };
+export type SelectiveDisclosableClaims =
+  | ({
+      [key: string]: SelectiveDisclosableClaims | Array<SelectiveDiscloseableArrayItem | any>;
+    } & SelectiveDisclosableClaimsSDAttributes)
+  | SelectiveDisclosableClaimsSDAttributes;
 
 export type DisclosureMap = {
   [sdDigest: string]: {
@@ -159,7 +169,7 @@ export type GetHasher = (hashAlg: string) => Promise<Hasher>;
 export type Signer = (header: JWTHeaderParameters, payload: JWTPayload) => Promise<string>;
 export type Verifier = (data: string) => Promise<boolean>;
 export type KeyBindingVerifier = (data: string, key: JWK) => Promise<boolean>;
-export type SaltGenerator = (size) => string;
+export type SaltGenerator = (size: number) => string;
 
 export interface IssueSDJWTOptions {
   signer: Signer;
