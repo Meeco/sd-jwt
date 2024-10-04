@@ -1,41 +1,69 @@
 export interface JWK {
-  /** JWK "alg" (Algorithm) Parameter. */
+  /** JWK "kty" (Key Type) Parameter */
+  kty: string;
+  /**
+   * JWK "alg" (Algorithm) Parameter
+   */
   alg?: string;
-  crv?: string;
-  d?: string;
-  dp?: string;
-  dq?: string;
-  e?: string;
-  /** JWK "ext" (Extractable) Parameter. */
-  ext?: boolean;
-  k?: string;
-  /** JWK "key_ops" (Key Operations) Parameter. */
+  /** JWK "key_ops" (Key Operations) Parameter */
   key_ops?: string[];
-  /** JWK "kid" (Key ID) Parameter. */
+  /** JWK "ext" (Extractable) Parameter */
+  ext?: boolean;
+  /** JWK "use" (Public Key Use) Parameter */
+  use?: string;
+  /** JWK "x5c" (X.509 Certificate Chain) Parameter */
+  x5c?: string[];
+  /** JWK "x5t" (X.509 Certificate SHA-1 Thumbprint) Parameter */
+  x5t?: string;
+  /** JWK "x5t#S256" (X.509 Certificate SHA-256 Thumbprint) Parameter */
+  'x5t#S256'?: string;
+  /** JWK "x5u" (X.509 URL) Parameter */
+  x5u?: string;
+  /** JWK "kid" (Key ID) Parameter */
   kid?: string;
-  /** JWK "kty" (Key Type) Parameter. */
-  kty?: string;
+  /**
+   * - EC JWK "crv" (Curve) Parameter
+   * - OKP JWK "crv" (The Subtype of Key Pair) Parameter
+   */
+  crv?: string;
+  /**
+   * - Private RSA JWK "d" (Private Exponent) Parameter
+   * - Private EC JWK "d" (ECC Private Key) Parameter
+   * - Private OKP JWK "d" (The Private Key) Parameter
+   */
+  d?: string;
+  /** Private RSA JWK "dp" (First Factor CRT Exponent) Parameter */
+  dp?: string;
+  /** Private RSA JWK "dq" (Second Factor CRT Exponent) Parameter */
+  dq?: string;
+  /** RSA JWK "e" (Exponent) Parameter */
+  e?: string;
+  /** Oct JWK "k" (Key Value) Parameter */
+  k?: string;
+  /** RSA JWK "n" (Modulus) Parameter */
   n?: string;
+  /**
+   * Private RSA JWK "oth" (Other Primes Info) Parameter
+   */
   oth?: Array<{
     d?: string;
     r?: string;
     t?: string;
   }>;
+  /** Private RSA JWK "p" (First Prime Factor) Parameter */
   p?: string;
+  /** Private RSA JWK "q" (Second Prime Factor) Parameter */
   q?: string;
+  /** Private RSA JWK "qi" (First CRT Coefficient) Parameter */
   qi?: string;
-  /** JWK "use" (Public Key Use) Parameter. */
-  use?: string;
+  /**
+   * - EC JWK "x" (X Coordinate) Parameter
+   * - OKP JWK "x" (The public key) Parameter
+   */
   x?: string;
+  /** EC JWK "y" (Y Coordinate) Parameter */
   y?: string;
-  /** JWK "x5c" (X.509 Certificate Chain) Parameter. */
-  x5c?: string[];
-  /** JWK "x5t" (X.509 Certificate SHA-1 Thumbprint) Parameter. */
-  x5t?: string;
-  /** "x5t#S256" (X.509 Certificate SHA-256 Thumbprint) Parameter. */
-  'x5t#S256'?: string;
-  /** JWK "x5u" (X.509 URL) Parameter. */
-  x5u?: string;
+
   [propName: string]: unknown;
 }
 
