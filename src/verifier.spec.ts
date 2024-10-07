@@ -46,6 +46,7 @@ describe('verifySDJWT', () => {
 
       const holderKey = await importJWK(holderJWK, header.alg);
       const verifiedKbJWT = await jwtVerify(kbjwt, holderKey);
+
       return !!verifiedKbJWT;
     };
   };
