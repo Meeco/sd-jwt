@@ -1,5 +1,5 @@
-import { FORMAT_SEPARATOR, SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
-import { CreateDecoyError, DecodeJWTError } from './errors.js';
+import { FORBIDDEN_KEYS_IN_DISCLOSURE, FORMAT_SEPARATOR, SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
+import { CreateDecoyError, DecodeJWTError, PackSDJWTError } from './errors.js';
 import * as base64url from './runtime/base64url.js';
 import {
   CompactSDJWT,
@@ -174,6 +174,7 @@ export const createDisclosure = (
   const saltGenerator = options?.generateSalt ? options.generateSalt : generateSalt;
   const salt = saltGenerator(16);
   if (claim.key) {
+    isValidDisclosureClaimKey(claim.key);
     disclosureArray = [salt, claim.key, claim.value];
   } else {
     disclosureArray = [salt, claim.value];
@@ -327,4 +328,61 @@ export const createDecoy = (count: number, hasher: Hasher, saltGenerator: SaltGe
   }
 
   return decoys;
+};
+
+export const isValidDisclosureClaimKey = (claimName: string): void => {
+  if (typeof claimName !== 'string') {
+    throw new PackSDJWTError('Claim name must be a string');
+  }
+
+  if (FORBIDDEN_KEYS_IN_DISCLOSURE.includes(claimName)) {
+    throw new PackSDJWTError(`Claim name cannot be one of the following: ${FORBIDDEN_KEYS_IN_DISCLOSURE.join(', ')}`);
+  }
+};
+
+export const assertUniqueDigestsInArrayObjects = (itemsArray: any[]): void => {
+  const allDigests: string[] = [];
+  if (!itemsArray) return;
+
+  for (const item of itemsArray) {
+    if (isObject(item) && '...' in item && typeof item['...'] === 'string') {
+      allDigests.push(item['...']);
+    }
+  }
+
+  if (allDigests.length > 0) {
+    const uniqueDigests = new Set(allDigests);
+    if (uniqueDigests.size !== allDigests.length) {
+      const tally: Record<string, number> = {};
+      let firstDuplicate = '';
+      for (const digest of allDigests) {
+        tally[digest] = (tally[digest] || 0) + 1;
+        if (tally[digest] > 1) {
+          firstDuplicate = digest;
+          break;
+        }
+      }
+
+      throw new PackSDJWTError(`Duplicate digest value "${firstDuplicate}" found.`);
+    }
+  }
+};
+
+export const assertUniqueDigestsInStringArray = (digestsArray: string[]): void => {
+  if (!digestsArray || digestsArray.length <= 1) return;
+
+  const uniqueDigests = new Set(digestsArray);
+  if (uniqueDigests.size !== digestsArray.length) {
+    const tally: Record<string, number> = {};
+    let firstDuplicate = '';
+    for (const digest of digestsArray) {
+      tally[digest] = (tally[digest] || 0) + 1;
+      if (tally[digest] > 1) {
+        firstDuplicate = digest;
+        break;
+      }
+    }
+
+    throw new PackSDJWTError(`Duplicate digest value "${firstDuplicate}" found. ${digestsArray}`);
+  }
 };

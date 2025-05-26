@@ -8,6 +8,8 @@ import {
 } from './constants.js';
 import { PackSDJWTError, SDJWTInvalidFormatError } from './errors.js';
 import {
+  assertUniqueDigestsInArrayObjects,
+  assertUniqueDigestsInStringArray,
   createDecoy,
   createDisclosure,
   createHashMapping,
@@ -140,6 +142,8 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
       }
     }
 
+    assertUniqueDigestsInArrayObjects(packedClaims);
+
     const decoys = createDecoy(
       disclosureFrame[SD_DECOY] || disclosureFrame[SD_DECOY_COUNT],
       hasher,
@@ -171,6 +175,8 @@ export const packSDJWT: PackSDJWT = async (claims, disclosureFrame, hasher, opti
         packedClaims[key] = claim;
       }
     }
+
+    assertUniqueDigestsInStringArray(packedClaims[SD_DIGEST]);
 
     const decoys = createDecoy(
       disclosureFrame[SD_DECOY] || disclosureFrame[SD_DECOY_COUNT],

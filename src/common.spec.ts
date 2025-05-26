@@ -11,6 +11,8 @@ import {
 } from './test-utils/helpers';
 import { INVALID_JWT } from './test-utils/params';
 import { DisclosureFrame } from './types';
+import { SD_DIGEST, SD_LIST_PREFIX } from './constants';
+import { PackSDJWTError } from './errors';
 
 const examples = getExamples();
 
@@ -296,6 +298,62 @@ describe('packSDJWT', () => {
 
     // @ts-expect-error Invalid hasher
     await expect(packSDJWT({}, {}, 'invalid', {})).rejects.toThrow();
+  });
+
+  it('should handle restricted claims, SD_LIST_PREFIX', async () => {
+    const claims = {
+      [SD_LIST_PREFIX]: 'restricted key',
+    };
+
+    const disclosureFrame = {
+      [SD_DIGEST]: ['...'],
+    };
+    await expect(packSDJWT(claims, disclosureFrame, hasher, {})).rejects.toThrow(
+      'Claim name cannot be one of the following: _sd, ...',
+    );
+  });
+
+  it('should handle restricted claims, SD_DIGEST', async () => {
+    const claims = {
+      [SD_DIGEST]: 'restricted key',
+    };
+
+    const disclosureFrame = {
+      [SD_DIGEST]: ['_sd'],
+    };
+    await expect(packSDJWT(claims, disclosureFrame, hasher, {})).rejects.toThrow(
+      'Claim name cannot be one of the following: _sd, ...',
+    );
+  });
+
+  it('should handle restricted claims, SD_DIGEST', async () => {
+    const claims = {
+      [SD_DIGEST]: 'restricted key',
+    };
+
+    const disclosureFrame = {
+      [SD_DIGEST]: ['_sd'],
+    };
+    await expect(packSDJWT(claims, disclosureFrame, hasher, {})).rejects.toThrow(
+      'Claim name cannot be one of the following: _sd, ...',
+    );
+  });
+
+  it('should throw an error if two identical array elements are disclosed, leading to duplicate digests', async () => {
+    const claims = {
+      items: [
+        { id: 'A', value: 'same_payload' },
+        { id: 'B', value: 'same_payload' },
+        'same_string_payload',
+        'same_string_payload',
+      ],
+    };
+    // Disclose the raw string values at index 2 and 3
+    const disclosureFrame: DisclosureFrame = {
+      items: { [SD_DIGEST]: [2, 3] },
+    };
+
+    await expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt })).rejects.toThrow(PackSDJWTError);
   });
 
   describe('decoys', () => {

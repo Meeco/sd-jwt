@@ -10,3 +10,4 @@ export const FORMAT_SEPARATOR = '~';
 export const KB_JWT_TYPE_HEADER = 'kb+jwt';
 export const SD_LIST_PREFIX = '...';
 export const SD_JWT_TYPE = 'sd+jwt';
+export const FORBIDDEN_KEYS_IN_DISCLOSURE = [SD_DIGEST, SD_LIST_PREFIX];
