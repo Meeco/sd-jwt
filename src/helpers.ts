@@ -107,6 +107,7 @@ export const unpackArray = ({ arr, map }) => {
         const hash = item[SD_LIST_PREFIX];
 
         const disclosed = map[hash];
+
         if (disclosed) {
           if (disclosed.key !== null) {
             throw new UnpackSDJWTError(
@@ -149,6 +150,7 @@ export const unpack = ({ obj, map }) => {
 
     const { _sd, ...payload } = obj;
     const claims = {};
+
     if (_sd) {
       _sd.forEach((hash) => {
         const disclosed = map[hash];
@@ -190,6 +192,7 @@ export const createDisclosure = (
   let disclosureArray;
   const saltGenerator = options?.generateSalt ? options.generateSalt : generateSalt;
   const salt = saltGenerator(16);
+
   if (claim.key) {
     isValidDisclosureClaimKey(claim.key);
     disclosureArray = [salt, claim.key, claim.value];
@@ -268,6 +271,7 @@ export const unpackArrayClaims = (arr: Array<any>, map: SdDigestHashmap) => {
       } else {
         // unpack recursively
         const claims = unpackClaims(item, map);
+
         if (Object.keys(claims).length > 0) {
           unpackedArray.push(claims);
         } else {
@@ -306,6 +310,7 @@ export const unpackClaims = (obj: any, map: SdDigestHashmap) => {
   if (obj._sd) {
     obj._sd.forEach((hash: string) => {
       const disclosed = map[hash];
+
       if (disclosed) {
         claims[disclosed.key] = { _sd: hash };
       }
@@ -382,6 +387,7 @@ const hasDuplicates = (strings: string[]): boolean => {
   if (!strings || strings.length <= 1) {
     return false;
   }
+
   const uniqueStrings = new Set(strings);
   return uniqueStrings.size !== strings.length;
 };
