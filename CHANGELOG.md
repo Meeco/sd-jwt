@@ -9,7 +9,7 @@ and this project (loosely) adheres to [Semantic Versioning](https://semver.org/s
 
 ### Added
 
-- Added checks to make sure there are no duplicate data
+- Added checks to make sure there are no duplicate digests
 
 ### Changed
 

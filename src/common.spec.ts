@@ -326,28 +326,34 @@ describe('packSDJWT', () => {
     );
   });
 
-  it('should throw an error if two identical array elements are disclosed, leading to duplicate digests', async () => {
+  it('should throw an error for duplicate digests in object array', async () => {
     const claims = {
-      items: [
-        { id: 'A', value: 'same_payload' },
-        { id: 'B', value: 'same_payload' },
-        'same_string_payload',
-        'same_string_payload',
-      ],
+      items: ['same_string_payload', 'same_string_payload'],
     };
-    // Disclose the raw string values at index 2 and 3
     const disclosureFrame: DisclosureFrame = {
-      items: { [SD_DIGEST]: [2, 3] },
+      items: { [SD_DIGEST]: [0, 1] },
     };
 
     await expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt })).rejects.toThrow(PackSDJWTError);
   });
 
+  it('should throw an error for duplicate digests in string array', async () => {
+    const claims = { id: 123 };
+    const disclosureFrame: DisclosureFrame = { _sd: ['id'], _decoyCount: 5 };
+    // Static salt ensures decoys will have the same hash
+    await expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt })).rejects.toThrow(PackSDJWTError);
+  });
+
   describe('decoys', () => {
+    // Random salt ensures decoys will have the unique hash
+    const uniqueGenerateSalt = () => `salt-${Math.random().toString(36).substring(2, 15)}`;
+
     it('should be able to generate decoys', async () => {
       const claims = { id: 123 };
       const disclosureFrame: DisclosureFrame = { _sd: ['id'], _sd_decoy: 5 };
-      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
+      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, {
+        generateSalt: uniqueGenerateSalt,
+      });
 
       expect(disclosures.length).toBe(1);
       expect(result._sd.length).toBe(6);
@@ -356,7 +362,9 @@ describe('packSDJWT', () => {
     it('still supports old _decoyCount parameter', async () => {
       const claims = { id: 123 };
       const disclosureFrame: DisclosureFrame = { _sd: ['id'], _decoyCount: 5 };
-      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
+      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, {
+        generateSalt: uniqueGenerateSalt,
+      });
 
       expect(disclosures.length).toBe(1);
       expect(result._sd.length).toBe(6);
@@ -365,7 +373,9 @@ describe('packSDJWT', () => {
     it('should be able to generate decoys in an array', async () => {
       const claims = { arr: [1, 2, 3] };
       const disclosureFrame: DisclosureFrame = { arr: { _sd: [0, 1, 2], _sd_decoy: 5 } };
-      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
+      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, {
+        generateSalt: uniqueGenerateSalt,
+      });
 
       expect(disclosures.length).toBe(3);
       expect(result.arr.length).toBe(8);
@@ -375,14 +385,14 @@ describe('packSDJWT', () => {
       const claims = { id: 123 };
       const disclosureFrame: DisclosureFrame = { _sd: ['id'], _sd_decoy: 1, _decoyCount: 2 };
 
-      expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt })).rejects.toThrow();
+      expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt: uniqueGenerateSalt })).rejects.toThrow();
     });
 
     it('should throw an error when provided with a negative decoy count', () => {
       const claims = { id: 123 };
       const disclosureFrame = { _sd: ['id'], _sd_decoy: -5 };
 
-      expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt })).rejects.toThrow();
+      expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt: uniqueGenerateSalt })).rejects.toThrow();
     });
   });
 });
