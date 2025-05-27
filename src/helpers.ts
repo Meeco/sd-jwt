@@ -108,13 +108,11 @@ export const unpackArray = ({ arr, map }) => {
 
         const disclosed = map[hash];
 
-        if (disclosed) {
-          if (disclosed.key !== null) {
-            throw new UnpackSDJWTError(
-              `Invalid disclosure format for array element: expected 2 elements (salt, value)`,
-            );
-          }
+        if (disclosed?.key !== null) {
+          throw new UnpackSDJWTError(`Invalid disclosure format for array element: expected 2 elements (salt, value)`);
+        }
 
+        if (disclosed) {
           unpackedArray.push(unpack({ obj: disclosed.value, map }));
         }
       } else {
