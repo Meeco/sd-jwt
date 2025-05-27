@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { decodeSDJWT, packSDJWT, unpackSDJWT } from './common';
-import { base64encode } from './helpers';
+import { base64encode, decodeDisclosure } from './helpers';
 import {
   getExamples,
   loadIssuedSDJWT,
@@ -9,10 +9,10 @@ import {
   loadSDJWTPayload,
   loadVerifiedContents,
 } from './test-utils/helpers';
-import { INVALID_JWT } from './test-utils/params';
+import { INVALID_DISCLOSURE_ARRAY_SD_JWT_EXAMPLES, INVALID_JWT } from './test-utils/params';
 import { DisclosureFrame } from './types';
 import { SD_DIGEST, SD_LIST_PREFIX } from './constants';
-import { PackSDJWTError } from './errors';
+import { PackSDJWTError, UnpackSDJWTError } from './errors';
 
 const examples = getExamples();
 
@@ -36,14 +36,16 @@ describe('decodeSDJWT', () => {
 });
 
 describe('unpackSDJWT', () => {
+  const testHasher = (data: string | Uint8Array) => {
+    const digest = crypto.createHash('sha256').update(data).digest();
+    return base64encode(digest);
+  };
+
   const getHasher = (hashAlg) => {
     let hasher;
     // Default Hasher = Hasher for SHA-256
     if (!hashAlg || hashAlg.toLowerCase() === 'sha-256') {
-      hasher = (data) => {
-        const digest = crypto.createHash('sha256').update(data).digest();
-        return base64encode(digest);
-      };
+      hasher = testHasher;
     }
     return Promise.resolve(hasher);
   };
@@ -55,6 +57,53 @@ describe('unpackSDJWT', () => {
     const { unverifiedInputSDJWT, disclosures } = decodeSDJWT(sdjwt);
     const result = await unpackSDJWT(unverifiedInputSDJWT, disclosures, getHasher);
     expect(result).toEqual(expectedSDJWT);
+  });
+
+  it('should reject conflicting claims at same level', async () => {
+    const permanentClaimKey = 'user_status';
+
+    const saltForTest = 'salt';
+    const disclosureArray = [saltForTest, permanentClaimKey, 'value_to_be_rejected'];
+    const rawDisclosureString = JSON.stringify(disclosureArray);
+    const encodedDisclosureString = base64encode(rawDisclosureString);
+
+    const conflictingDigest = testHasher(encodedDisclosureString);
+
+    const jwtPayloadWithConflict = {
+      [permanentClaimKey]: 'active_in_payload',
+      another_claim: 'some other data',
+      [SD_DIGEST]: [conflictingDigest],
+    };
+
+    const decodedConflictingDisclosure = decodeDisclosure(encodedDisclosureString);
+    const disclosuresForUnpack = [decodedConflictingDisclosure];
+
+    const unpackPromise = unpackSDJWT(jwtPayloadWithConflict, disclosuresForUnpack, getHasher);
+
+    await expect(unpackPromise).rejects.toThrow(UnpackSDJWTError);
+    await expect(unpackPromise).rejects.toThrow(
+      `Claim name conflict: Disclosed claim "${permanentClaimKey}" already exists as a property at this level.`,
+    );
+  });
+
+  it('should reject if a disclosure for an object property provides an invalid key type', async () => {
+    for (const { disclosureArray } of INVALID_DISCLOSURE_ARRAY_SD_JWT_EXAMPLES) {
+      const rawDisclosureString = JSON.stringify(disclosureArray);
+      const encodedDisclosureString = base64encode(rawDisclosureString);
+      const digestForBadDisclosure = testHasher(encodedDisclosureString);
+
+      const jwtPayload = {
+        [SD_DIGEST]: [digestForBadDisclosure],
+      };
+
+      const decodedBadDisclosure = decodeDisclosure(encodedDisclosureString);
+      const disclosuresForUnpack = [decodedBadDisclosure];
+
+      const unpackPromise = unpackSDJWT(jwtPayload, disclosuresForUnpack, getHasher);
+
+      await expect(unpackPromise).rejects.toThrow(UnpackSDJWTError);
+      await expect(unpackPromise).rejects.toThrow(`Disclosed claim key must be a non-empty string`);
+    }
   });
 });
 

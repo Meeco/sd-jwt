@@ -1,5 +1,5 @@
 import { FORBIDDEN_KEYS_IN_DISCLOSURE, FORMAT_SEPARATOR, SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
-import { CreateDecoyError, DecodeJWTError, PackSDJWTError } from './errors.js';
+import { CreateDecoyError, DecodeJWTError, PackSDJWTError, UnpackSDJWTError } from './errors.js';
 import * as base64url from './runtime/base64url.js';
 import {
   CompactSDJWT,
@@ -146,9 +146,21 @@ export const unpack = ({ obj, map }) => {
       _sd.forEach((hash) => {
         const disclosed = map[hash];
         if (disclosed) {
+          if (disclosed.key === '' || disclosed.key === null || typeof disclosed.key !== 'string') {
+            throw new UnpackSDJWTError(`Disclosed claim key must be a non-empty string`);
+          }
+
           claims[disclosed.key] = unpack({ obj: disclosed.value, map });
         }
       });
+    }
+
+    for (const disclosedKey of Object.keys(claims)) {
+      if (Object.prototype.hasOwnProperty.call(payload, disclosedKey)) {
+        throw new UnpackSDJWTError(
+          `Claim name conflict: Disclosed claim "${disclosedKey}" already exists as a property at this level.`,
+        );
+      }
     }
 
     return Object.assign(payload, claims);
