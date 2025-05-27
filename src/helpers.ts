@@ -105,8 +105,15 @@ export const unpackArray = ({ arr, map }) => {
       // if Array item is { '...': <SD_HASH_DIGEST> }
       if (item[SD_LIST_PREFIX]) {
         const hash = item[SD_LIST_PREFIX];
+
         const disclosed = map[hash];
         if (disclosed) {
+          if (disclosed.key !== null) {
+            throw new UnpackSDJWTError(
+              `Invalid disclosure format for array element: expected 2 elements (salt, value)`,
+            );
+          }
+
           unpackedArray.push(unpack({ obj: disclosed.value, map }));
         }
       } else {
@@ -146,9 +153,7 @@ export const unpack = ({ obj, map }) => {
       _sd.forEach((hash) => {
         const disclosed = map[hash];
         if (disclosed) {
-          if (disclosed.key === '' || disclosed.key === null || typeof disclosed.key !== 'string') {
-            throw new UnpackSDJWTError(`Disclosed claim key must be a non-empty string`);
-          }
+          validateDisclosedKey(disclosed.key);
 
           claims[disclosed.key] = unpack({ obj: disclosed.value, map });
         }
@@ -352,14 +357,6 @@ export const isValidDisclosureClaimKey = (claimName: string): void => {
   }
 };
 
-const hasDuplicates = (strings: string[]): boolean => {
-  if (!strings || strings.length <= 1) {
-    return false;
-  }
-  const uniqueStrings = new Set(strings);
-  return uniqueStrings.size !== strings.length;
-};
-
 export const assertUniqueDigestsInArrayObjects = (itemsArray: any[]): void => {
   if (!itemsArray) return;
 
@@ -378,5 +375,25 @@ export const assertUniqueDigestsInArrayObjects = (itemsArray: any[]): void => {
 export const assertUniqueDigestsInStringArray = (digestsArray: string[]): void => {
   if (hasDuplicates(digestsArray || [])) {
     throw new PackSDJWTError(`Duplicate digest values found .`);
+  }
+};
+
+const hasDuplicates = (strings: string[]): boolean => {
+  if (!strings || strings.length <= 1) {
+    return false;
+  }
+  const uniqueStrings = new Set(strings);
+  return uniqueStrings.size !== strings.length;
+};
+
+const validateDisclosedKey = (disclosedKey: any) => {
+  if (disclosedKey === '' || disclosedKey === null || typeof disclosedKey !== 'string') {
+    throw new UnpackSDJWTError(`Disclosed claim key must be a non-empty string`);
+  }
+
+  if (FORBIDDEN_KEYS_IN_DISCLOSURE.includes(disclosedKey)) {
+    throw new UnpackSDJWTError(
+      `Disclosed Claim name cannot be one of the following: ${FORBIDDEN_KEYS_IN_DISCLOSURE.join(', ')}`,
+    );
   }
 };
