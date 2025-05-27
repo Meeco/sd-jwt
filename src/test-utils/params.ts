@@ -80,20 +80,15 @@ export const ARRAY_SD_JWT =
 
 export const INVALID_DISCLOSURE_ARRAY_SD_JWT_EXAMPLES = [
   {
-    scenarioName: 'key is null (from 2-element disclosure)',
     disclosureArray: ['salt', 'some-value'],
   },
   {
-    scenarioName: 'key is null (from 3-element disclosure with null key)',
     disclosureArray: ['salt', null, 'some-value'],
   },
   {
-    scenarioName: 'key is a number',
     disclosureArray: ['salt', 123, 'some-value'],
-    expectedKeyInError: '123',
   },
   {
-    scenarioName: 'key is an empty string',
     disclosureArray: ['salt', '', 'some-value'],
   },
 ];
