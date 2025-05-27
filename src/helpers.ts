@@ -359,12 +359,12 @@ export const assertUniqueDigestsInArrayObjects = (itemsArray: any[]): void => {
   }
 
   if (hasDuplicates(allDigests)) {
-    throw new PackSDJWTError(`Duplicate digest values found .`);
+    throw new PackSDJWTError(`Duplicate digest values found in array objects.`);
   }
 };
 
 export const assertUniqueDigestsInStringArray = (digestsArray: string[]): void => {
   if (hasDuplicates(digestsArray || [])) {
-    throw new PackSDJWTError(`Duplicate digest values found .`);
+    throw new PackSDJWTError(`Duplicate digest values found in string array.`);
   }
 };
