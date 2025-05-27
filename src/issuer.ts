@@ -4,6 +4,14 @@ import { IssueSDJWT } from './types.js';
 import { base64encode, combineSDJWT } from './helpers.js';
 import { IssueSDJWTError } from './errors.js';
 
+/**
+ * Issues a new Selectively Disclosable JWT (SD-JWT).
+ *
+ * Packs the provided payload based on the disclosureFrame,
+ * adds the `_sd_alg` claim (derived from the `hash.alg` option) to indicate
+ * the hashing algorithm used for disclosures.
+ *
+ *  */
 export const issueSDJWT: IssueSDJWT = async (header, payload, disclosureFrame, { signer, hash, generateSalt, cnf }) => {
   if (!signer || typeof signer !== 'function') {
     throw new IssueSDJWTError('Signer function is required');
