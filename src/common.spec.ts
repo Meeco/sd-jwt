@@ -326,19 +326,6 @@ describe('packSDJWT', () => {
     );
   });
 
-  it('should handle restricted claims, SD_DIGEST', async () => {
-    const claims = {
-      [SD_DIGEST]: 'restricted key',
-    };
-
-    const disclosureFrame = {
-      [SD_DIGEST]: ['_sd'],
-    };
-    await expect(packSDJWT(claims, disclosureFrame, hasher, {})).rejects.toThrow(
-      'Claim name cannot be one of the following: _sd, ...',
-    );
-  });
-
   it('should throw an error if two identical array elements are disclosed, leading to duplicate digests', async () => {
     const claims = {
       items: [

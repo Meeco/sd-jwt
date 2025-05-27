@@ -340,49 +340,31 @@ export const isValidDisclosureClaimKey = (claimName: string): void => {
   }
 };
 
+const hasDuplicates = (strings: string[]): boolean => {
+  if (!strings || strings.length <= 1) {
+    return false;
+  }
+  const uniqueStrings = new Set(strings);
+  return uniqueStrings.size !== strings.length;
+};
+
 export const assertUniqueDigestsInArrayObjects = (itemsArray: any[]): void => {
-  const allDigests: string[] = [];
   if (!itemsArray) return;
 
+  const allDigests: string[] = [];
   for (const item of itemsArray) {
-    if (isObject(item) && '...' in item && typeof item['...'] === 'string') {
+    if (isObject(item) && typeof item['...'] === 'string') {
       allDigests.push(item['...']);
     }
   }
 
-  if (allDigests.length > 0) {
-    const uniqueDigests = new Set(allDigests);
-    if (uniqueDigests.size !== allDigests.length) {
-      const tally: Record<string, number> = {};
-      let firstDuplicate = '';
-      for (const digest of allDigests) {
-        tally[digest] = (tally[digest] || 0) + 1;
-        if (tally[digest] > 1) {
-          firstDuplicate = digest;
-          break;
-        }
-      }
-
-      throw new PackSDJWTError(`Duplicate digest value "${firstDuplicate}" found.`);
-    }
+  if (hasDuplicates(allDigests)) {
+    throw new PackSDJWTError(`Duplicate digest values found .`);
   }
 };
 
 export const assertUniqueDigestsInStringArray = (digestsArray: string[]): void => {
-  if (!digestsArray || digestsArray.length <= 1) return;
-
-  const uniqueDigests = new Set(digestsArray);
-  if (uniqueDigests.size !== digestsArray.length) {
-    const tally: Record<string, number> = {};
-    let firstDuplicate = '';
-    for (const digest of digestsArray) {
-      tally[digest] = (tally[digest] || 0) + 1;
-      if (tally[digest] > 1) {
-        firstDuplicate = digest;
-        break;
-      }
-    }
-
-    throw new PackSDJWTError(`Duplicate digest value "${firstDuplicate}" found. ${digestsArray}`);
+  if (hasDuplicates(digestsArray || [])) {
+    throw new PackSDJWTError(`Duplicate digest values found .`);
   }
 };
