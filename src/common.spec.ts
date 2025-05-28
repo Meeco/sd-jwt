@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { decodeSDJWT, packSDJWT, unpackSDJWT } from './common';
-import { base64encode } from './helpers';
+import { base64encode, decodeDisclosure } from './helpers';
 import {
   getExamples,
   loadIssuedSDJWT,
@@ -9,8 +9,10 @@ import {
   loadSDJWTPayload,
   loadVerifiedContents,
 } from './test-utils/helpers';
-import { INVALID_JWT } from './test-utils/params';
+import { INVALID_DISCLOSURE_ARRAY_SD_JWT_EXAMPLES, INVALID_JWT } from './test-utils/params';
 import { DisclosureFrame } from './types';
+import { FORBIDDEN_KEYS_IN_DISCLOSURE, SD_DIGEST, SD_LIST_PREFIX } from './constants';
+import { PackSDJWTError, UnpackSDJWTError } from './errors';
 
 const examples = getExamples();
 
@@ -34,14 +36,16 @@ describe('decodeSDJWT', () => {
 });
 
 describe('unpackSDJWT', () => {
+  const testHasher = (data: string | Uint8Array) => {
+    const digest = crypto.createHash('sha256').update(data).digest();
+    return base64encode(digest);
+  };
+
   const getHasher = (hashAlg) => {
     let hasher;
     // Default Hasher = Hasher for SHA-256
     if (!hashAlg || hashAlg.toLowerCase() === 'sha-256') {
-      hasher = (data) => {
-        const digest = crypto.createHash('sha256').update(data).digest();
-        return base64encode(digest);
-      };
+      hasher = testHasher;
     }
     return Promise.resolve(hasher);
   };
@@ -53,6 +57,99 @@ describe('unpackSDJWT', () => {
     const { unverifiedInputSDJWT, disclosures } = decodeSDJWT(sdjwt);
     const result = await unpackSDJWT(unverifiedInputSDJWT, disclosures, getHasher);
     expect(result).toEqual(expectedSDJWT);
+  });
+
+  it('should reject conflicting claims at same level', async () => {
+    const permanentClaimKey = 'user_status';
+
+    const saltForTest = 'salt';
+    const disclosureArray = [saltForTest, permanentClaimKey, 'value_to_be_rejected'];
+    const rawDisclosureString = JSON.stringify(disclosureArray);
+    const encodedDisclosureString = base64encode(rawDisclosureString);
+
+    const conflictingDigest = testHasher(encodedDisclosureString);
+
+    const jwtPayloadWithConflict = {
+      [permanentClaimKey]: 'active_in_payload',
+      another_claim: 'some other data',
+      [SD_DIGEST]: [conflictingDigest],
+    };
+
+    const decodedConflictingDisclosure = decodeDisclosure(encodedDisclosureString);
+    const disclosuresForUnpack = [decodedConflictingDisclosure];
+
+    const unpackPromise = unpackSDJWT(jwtPayloadWithConflict, disclosuresForUnpack, getHasher);
+
+    await expect(unpackPromise).rejects.toThrow(UnpackSDJWTError);
+    await expect(unpackPromise).rejects.toThrow(
+      `Claim name conflict: Disclosed claim "${permanentClaimKey}" already exists as a property at this level.`,
+    );
+  });
+
+  it('should reject if a disclosure for an object property provides an invalid key type', async () => {
+    for (const { disclosureArray } of INVALID_DISCLOSURE_ARRAY_SD_JWT_EXAMPLES) {
+      const rawDisclosureString = JSON.stringify(disclosureArray);
+      const encodedDisclosureString = base64encode(rawDisclosureString);
+      const digestForBadDisclosure = testHasher(encodedDisclosureString);
+
+      const jwtPayload = {
+        [SD_DIGEST]: [digestForBadDisclosure],
+      };
+
+      const decodedBadDisclosure = decodeDisclosure(encodedDisclosureString);
+      const disclosuresForUnpack = [decodedBadDisclosure];
+
+      const unpackPromise = unpackSDJWT(jwtPayload, disclosuresForUnpack, getHasher);
+
+      await expect(unpackPromise).rejects.toThrow(UnpackSDJWTError);
+      await expect(unpackPromise).rejects.toThrow(`Disclosed claim key must be a non-empty string`);
+    }
+  });
+
+  it('should reject if a disclosed claim name for an object property is a reserved keyword (_sd or ...)', async () => {
+    const reservedKeyScenarios = FORBIDDEN_KEYS_IN_DISCLOSURE;
+
+    for (const reservedKey of reservedKeyScenarios) {
+      const disclosureArray = ['salt', reservedKey, 'some_value'];
+      const rawDisclosureString = JSON.stringify(disclosureArray);
+      const encodedDisclosureString = base64encode(rawDisclosureString);
+      const digest = testHasher(encodedDisclosureString);
+
+      const jwtPayload = {
+        [SD_DIGEST]: [digest],
+      };
+
+      const decodedDisclosure = decodeDisclosure(encodedDisclosureString);
+      const disclosuresForUnpack = [decodedDisclosure];
+
+      const unpackPromise = unpackSDJWT(jwtPayload, disclosuresForUnpack, getHasher);
+
+      await expect(unpackPromise).rejects.toThrow(UnpackSDJWTError);
+      await expect(unpackPromise).rejects.toThrow(
+        `Disclosed Claim name cannot be one of the following: ${FORBIDDEN_KEYS_IN_DISCLOSURE.join(', ')}`,
+      );
+    }
+  });
+
+  it('should reject if a disclosure for an array element is not a 2-element array (e.g., has a key)', async () => {
+    // This disclosure is 3 elements, making it invalid for an array item context
+    const disclosureArray = ['salt', 'this_key_should_not_be_here', 'value'];
+    const rawDisclosureString = JSON.stringify(disclosureArray);
+    const encodedDisclosureString = base64encode(rawDisclosureString);
+    const digest = testHasher(encodedDisclosureString);
+
+    const jwtPayload = {
+      list_of_items: [{ [SD_LIST_PREFIX]: digest }],
+    };
+
+    const decodedDisclosure = decodeDisclosure(encodedDisclosureString);
+    const disclosuresForUnpack = [decodedDisclosure];
+    const unpackPromise = unpackSDJWT(jwtPayload, disclosuresForUnpack, getHasher);
+
+    await expect(unpackPromise).rejects.toThrow(UnpackSDJWTError);
+    await expect(unpackPromise).rejects.toThrow(
+      `Invalid disclosure format for array element: expected 2 elements (salt, value)`,
+    );
   });
 });
 
@@ -298,11 +395,60 @@ describe('packSDJWT', () => {
     await expect(packSDJWT({}, {}, 'invalid', {})).rejects.toThrow();
   });
 
+  it('should handle restricted claims, SD_LIST_PREFIX', async () => {
+    const claims = {
+      [SD_LIST_PREFIX]: 'restricted key',
+    };
+
+    const disclosureFrame = {
+      [SD_DIGEST]: ['...'],
+    };
+    await expect(packSDJWT(claims, disclosureFrame, hasher, {})).rejects.toThrow(
+      'Claim name cannot be one of the following: _sd, ...',
+    );
+  });
+
+  it('should handle restricted claims, SD_DIGEST', async () => {
+    const claims = {
+      [SD_DIGEST]: 'restricted key',
+    };
+
+    const disclosureFrame = {
+      [SD_DIGEST]: ['_sd'],
+    };
+    await expect(packSDJWT(claims, disclosureFrame, hasher, {})).rejects.toThrow(
+      'Claim name cannot be one of the following: _sd, ...',
+    );
+  });
+
+  it('should throw an error for duplicate digests in object array', async () => {
+    const claims = {
+      items: ['same_string_payload', 'same_string_payload'],
+    };
+    const disclosureFrame: DisclosureFrame = {
+      items: { [SD_DIGEST]: [0, 1] },
+    };
+
+    await expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt })).rejects.toThrow(PackSDJWTError);
+  });
+
+  it('should throw an error for duplicate digests in string array', async () => {
+    const claims = { id: 123 };
+    const disclosureFrame: DisclosureFrame = { _sd: ['id'], _decoyCount: 5 };
+    // Static salt ensures decoys will have the same hash
+    await expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt })).rejects.toThrow(PackSDJWTError);
+  });
+
   describe('decoys', () => {
+    // Random salt ensures decoys will have the unique hash
+    const uniqueGenerateSalt = () => `salt-${Math.random().toString(36).substring(2, 15)}`;
+
     it('should be able to generate decoys', async () => {
       const claims = { id: 123 };
       const disclosureFrame: DisclosureFrame = { _sd: ['id'], _sd_decoy: 5 };
-      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
+      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, {
+        generateSalt: uniqueGenerateSalt,
+      });
 
       expect(disclosures.length).toBe(1);
       expect(result._sd.length).toBe(6);
@@ -311,7 +457,9 @@ describe('packSDJWT', () => {
     it('still supports old _decoyCount parameter', async () => {
       const claims = { id: 123 };
       const disclosureFrame: DisclosureFrame = { _sd: ['id'], _decoyCount: 5 };
-      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
+      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, {
+        generateSalt: uniqueGenerateSalt,
+      });
 
       expect(disclosures.length).toBe(1);
       expect(result._sd.length).toBe(6);
@@ -320,7 +468,9 @@ describe('packSDJWT', () => {
     it('should be able to generate decoys in an array', async () => {
       const claims = { arr: [1, 2, 3] };
       const disclosureFrame: DisclosureFrame = { arr: { _sd: [0, 1, 2], _sd_decoy: 5 } };
-      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, { generateSalt });
+      const { claims: result, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, {
+        generateSalt: uniqueGenerateSalt,
+      });
 
       expect(disclosures.length).toBe(3);
       expect(result.arr.length).toBe(8);
@@ -330,14 +480,14 @@ describe('packSDJWT', () => {
       const claims = { id: 123 };
       const disclosureFrame: DisclosureFrame = { _sd: ['id'], _sd_decoy: 1, _decoyCount: 2 };
 
-      expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt })).rejects.toThrow();
+      expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt: uniqueGenerateSalt })).rejects.toThrow();
     });
 
     it('should throw an error when provided with a negative decoy count', () => {
       const claims = { id: 123 };
       const disclosureFrame = { _sd: ['id'], _sd_decoy: -5 };
 
-      expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt })).rejects.toThrow();
+      expect(packSDJWT(claims, disclosureFrame, hasher, { generateSalt: uniqueGenerateSalt })).rejects.toThrow();
     });
   });
 });
