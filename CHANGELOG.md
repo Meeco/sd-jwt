@@ -10,6 +10,7 @@ and this project (loosely) adheres to [Semantic Versioning](https://semver.org/s
 ### Added
 
 - Added checks to make sure there are no duplicate digests
+- Increased SD-JWT unpack strictness: now rejects on duplicate properties, invalid keys from disclosures, reserved key and invalid array digests.
 
 ### Changed
 

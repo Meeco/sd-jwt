@@ -1,5 +1,5 @@
 import { FORBIDDEN_KEYS_IN_DISCLOSURE, FORMAT_SEPARATOR, SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
-import { CreateDecoyError, DecodeJWTError, PackSDJWTError } from './errors.js';
+import { CreateDecoyError, DecodeJWTError, PackSDJWTError, UnpackSDJWTError } from './errors.js';
 import * as base64url from './runtime/base64url.js';
 import {
   CompactSDJWT,
@@ -105,7 +105,13 @@ export const unpackArray = ({ arr, map }) => {
       // if Array item is { '...': <SD_HASH_DIGEST> }
       if (item[SD_LIST_PREFIX]) {
         const hash = item[SD_LIST_PREFIX];
+
         const disclosed = map[hash];
+
+        if (disclosed && disclosed.key !== null) {
+          throw new UnpackSDJWTError(`Invalid disclosure format for array element: expected 2 elements (salt, value)`);
+        }
+
         if (disclosed) {
           unpackedArray.push(unpack({ obj: disclosed.value, map }));
         }
@@ -142,13 +148,24 @@ export const unpack = ({ obj, map }) => {
 
     const { _sd, ...payload } = obj;
     const claims = {};
+
     if (_sd) {
       _sd.forEach((hash) => {
         const disclosed = map[hash];
         if (disclosed) {
+          validateDisclosedKey(disclosed.key);
+
           claims[disclosed.key] = unpack({ obj: disclosed.value, map });
         }
       });
+    }
+
+    for (const disclosedKey of Object.keys(claims)) {
+      if (Object.prototype.hasOwnProperty.call(payload, disclosedKey)) {
+        throw new UnpackSDJWTError(
+          `Claim name conflict: Disclosed claim "${disclosedKey}" already exists as a property at this level.`,
+        );
+      }
     }
 
     return Object.assign(payload, claims);
@@ -173,6 +190,7 @@ export const createDisclosure = (
   let disclosureArray;
   const saltGenerator = options?.generateSalt ? options.generateSalt : generateSalt;
   const salt = saltGenerator(16);
+
   if (claim.key) {
     isValidDisclosureClaimKey(claim.key);
     disclosureArray = [salt, claim.key, claim.value];
@@ -251,6 +269,7 @@ export const unpackArrayClaims = (arr: Array<any>, map: SdDigestHashmap) => {
       } else {
         // unpack recursively
         const claims = unpackClaims(item, map);
+
         if (Object.keys(claims).length > 0) {
           unpackedArray.push(claims);
         } else {
@@ -289,6 +308,7 @@ export const unpackClaims = (obj: any, map: SdDigestHashmap) => {
   if (obj._sd) {
     obj._sd.forEach((hash: string) => {
       const disclosed = map[hash];
+
       if (disclosed) {
         claims[disclosed.key] = { _sd: hash };
       }
@@ -340,14 +360,6 @@ export const isValidDisclosureClaimKey = (claimName: string): void => {
   }
 };
 
-const hasDuplicates = (strings: string[]): boolean => {
-  if (!strings || strings.length <= 1) {
-    return false;
-  }
-  const uniqueStrings = new Set(strings);
-  return uniqueStrings.size !== strings.length;
-};
-
 /**
  * Asserts that all selectively disclosed digest values (and decoys) within an array of items are unique.
  * It extracts these digest strings and checks for duplicates among them.
@@ -366,6 +378,7 @@ export const assertUniqueDigestsInArrayObjects = (itemsArray: any[]): void => {
     throw new PackSDJWTError(`Duplicate digest values found in array objects.`);
   }
 };
+
 /**
  * Asserts that all digest (and decoys) strings within a given array of strings are unique.
  *
@@ -373,5 +386,26 @@ export const assertUniqueDigestsInArrayObjects = (itemsArray: any[]): void => {
 export const assertUniqueDigestsInStringArray = (digestsArray: string[]): void => {
   if (hasDuplicates(digestsArray || [])) {
     throw new PackSDJWTError(`Duplicate digest values found in string array.`);
+  }
+};
+
+const hasDuplicates = (strings: string[]): boolean => {
+  if (!strings || strings.length <= 1) {
+    return false;
+  }
+
+  const uniqueStrings = new Set(strings);
+  return uniqueStrings.size !== strings.length;
+};
+
+const validateDisclosedKey = (disclosedKey: any) => {
+  if (disclosedKey === '' || disclosedKey === null || typeof disclosedKey !== 'string') {
+    throw new UnpackSDJWTError(`Disclosed claim key must be a non-empty string`);
+  }
+
+  if (FORBIDDEN_KEYS_IN_DISCLOSURE.includes(disclosedKey)) {
+    throw new UnpackSDJWTError(
+      `Disclosed Claim name cannot be one of the following: ${FORBIDDEN_KEYS_IN_DISCLOSURE.join(', ')}`,
+    );
   }
 };
