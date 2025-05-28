@@ -360,6 +360,10 @@ export const isValidDisclosureClaimKey = (claimName: string): void => {
   }
 };
 
+/**
+ * Asserts that all selectively disclosed digest values (and decoys) within an array of items are unique.
+ * It extracts these digest strings and checks for duplicates among them.
+ */
 export const assertUniqueDigestsInArrayObjects = (itemsArray: any[]): void => {
   if (!itemsArray) return;
 
@@ -371,13 +375,17 @@ export const assertUniqueDigestsInArrayObjects = (itemsArray: any[]): void => {
   }
 
   if (hasDuplicates(allDigests)) {
-    throw new PackSDJWTError(`Duplicate digest values found .`);
+    throw new PackSDJWTError(`Duplicate digest values found in array objects.`);
   }
 };
 
+/**
+ * Asserts that all digest (and decoys) strings within a given array of strings are unique.
+ *
+ */
 export const assertUniqueDigestsInStringArray = (digestsArray: string[]): void => {
   if (hasDuplicates(digestsArray || [])) {
-    throw new PackSDJWTError(`Duplicate digest values found .`);
+    throw new PackSDJWTError(`Duplicate digest values found in string array.`);
   }
 };
 
