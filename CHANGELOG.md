@@ -15,6 +15,7 @@ and this project (loosely) adheres to [Semantic Versioning](https://semver.org/s
 ### Changed
 
 - Prevented use of reserved names (`_sd`, `...`) as keys for selectively disclosable claims.
+- Refactor some tests with helpers to improved readability
 
 ## 1.2.1 - 2024-10-04
 

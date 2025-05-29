@@ -2,12 +2,43 @@ import { readdirSync } from 'fs';
 import { importJWK } from 'jose';
 import { readFile } from 'node:fs/promises';
 import { Example, EXAMPLES_DIRECTORY, ISSUER_PUBLIC_KEY, TEST_CASES_DIRECTORY } from './params';
+import { SD_DIGEST } from '../constants';
+import { base64encode, decodeDisclosure } from '../helpers';
+import { Disclosure } from '../types';
+
+interface TestDisclosurePackage {
+  encodedDisclosure: string;
+  digest: string;
+  decodedDisclosure: Disclosure;
+}
 
 function getDirectory(dirname: string) {
   return readdirSync(dirname, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
 }
+
+/**
+ * test utils
+ */
+
+export const createTestDisclosurePackage = (disclosureArray: any[], hasher: any): TestDisclosurePackage => {
+  const rawDisclosureString = JSON.stringify(disclosureArray);
+  const encodedDisclosure = base64encode(rawDisclosureString);
+  const digest = hasher(encodedDisclosure);
+  const decodedDisclosure = decodeDisclosure(encodedDisclosure);
+  return { encodedDisclosure, digest, decodedDisclosure };
+};
+
+export const createPayloadWithDisclosures = (
+  disclosures: Array<{ digest: string }>,
+  existingPayload: Record<string, any> = {},
+): Record<string, any> => {
+  return {
+    ...existingPayload,
+    [SD_DIGEST]: disclosures.map((d) => d.digest),
+  };
+};
 
 /**
  * './test/example' helpers
