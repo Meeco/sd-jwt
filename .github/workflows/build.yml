@@ -13,14 +13,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    outputs: 
+    outputs:
       cache-key: ${{ steps.cache-key.outputs.value }}
-    
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: lts/hydrogen # 18
           cache: 'npm'
@@ -29,7 +29,7 @@ jobs:
       - id: cache-key
         run: echo "value=dist-${{ hashFiles('src/**/*.ts', 'tsconfig.json', 'tsconfig/*.json', '.github/workflows/*.yml', 'package-lock.json') }}" >> $GITHUB_OUTPUT
       - name: Cache dist
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: dist
         with:
           path: dist
@@ -37,7 +37,7 @@ jobs:
       - name: Build
         run: npm run build-all
         if: ${{ steps.dist.outputs.cache-hit != 'true' }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist
