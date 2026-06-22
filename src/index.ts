@@ -1,4 +1,5 @@
 export * from './common.js';
+export * from './constants.js';
 export * from './helpers.js';
 export * from './issuer.js';
 export * from './jsonpath.js';
