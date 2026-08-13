@@ -3,7 +3,7 @@
 
 # SD-JWT
 
-This is an implementation of [SD-JWT (I-D version 19)](https://www.ietf.org/archive/id/draft-ietf-oauth-selective-disclosure-jwt-19.html) in typescript.
+This is an implementation of [SD-JWT (I-D version 19)](https://www.ietf.org/archive/id/draft-ietf-oauth-selective-disclosure-jwt-19.html) in TypeScript.
 
 ## Functionalities
 
@@ -31,7 +31,7 @@ This is an implementation of [SD-JWT (I-D version 19)](https://www.ietf.org/arch
 
 - Additional:
 
-  - [ ] Holder: separate function for a holder to be able to create a key binding JWT (6.2.2)
+  - [ ] Holder: a separate function for a holder to be able to create a key binding JWT (6.2.2)
 
 - Tests:
 
@@ -45,10 +45,65 @@ This is an implementation of [SD-JWT (I-D version 19)](https://www.ietf.org/arch
   - [x] Documentation
   - [x] Publish on npm
 
+## BYOC (Bring Your Own Crypto)
+
+This library implements the SD-JWT data structures and algorithms, but does not ship any cryptographic implementation itself. Instead, you pass in your own callback functions wherever crypto is needed. The library does not care which crypto library you use, only that your callback matches the expected shape — the snippets below are just examples of how you could implement each one (here using Node's `crypto` and `jose`); use whatever fits your runtime and key management instead. The right choice often depends on your platform: Node's built-in `crypto` module isn't available in the browser, so browser consumers typically reach for WebCrypto (`crypto.subtle`) or a library like `jose` that works across both Node and browser environments.
+
+- **`hasher`** — `(data: string) => string | Promise<string>`. Hashes a disclosure string into the digest used in `_sd` arrays. Must match the algorithm declared in `_sd_alg` (default `sha-256`).
+
+  Example implementation, using Node's `crypto`:
+
+  ```js
+  import crypto from 'crypto';
+
+  const hasher = (data) => {
+    const digest = crypto.createHash('sha256').update(data).digest();
+    return Buffer.from(digest).toString('base64url');
+  };
+  ```
+
+- **`signer`** — `(header, payload) => Promise<string>`. Signs the issuer's JWT header + payload and returns just the signature part. Used by `issueSDJWT`.
+
+  Example implementation, using `jose`:
+
+  ```js
+  import { SignJWT, importJWK } from 'jose';
+
+  const signer = async (header, payload) => {
+    const issuerPrivateKey = await importJWK(ISSUER_KEYPAIR.PRIVATE_KEY_JWK, header.alg);
+    return (await new SignJWT(payload).setProtectedHeader(header).sign(issuerPrivateKey)).split('.').pop();
+  };
+  ```
+
+- **`verifier`** — `(jwt: string) => Promise<unknown>`. Verifies the signature of a compact JWT. Used by `verifySDJWT`; throws or rejects if the signature is invalid.
+
+  Example implementation, using `jose`:
+
+  ```js
+  import { jwtVerify } from 'jose';
+
+  const verifier = async (jwt) => {
+    const issuerPublicKey = await getIssuerKey();
+    return jwtVerify(jwt, issuerPublicKey);
+  };
+  ```
+
+## API Overview
+
+The library exposes functions at two levels:
+
+- **`issueSDJWT(header, payload, disclosureFrame, opts)`** — top-level function for issuers. Packs `payload` according to `disclosureFrame`, signs it with the `signer` you provide, and returns a compact, ready-to-send SD-JWT (JWT + disclosures). This is the function most consumers should call to issue a token. Internally it calls `packSDJWT`.
+- **`verifySDJWT(compactSDJWT, verifier, getHasher, opts)`** — top-level function for verifiers. Verifies the signature (and optional key binding) of a compact SD-JWT and returns the payload with disclosed claims resolved. Internally it calls `unpackSDJWT`.
+- **`packSDJWT(claims, disclosureFrame, hasher, opts)`** — lower-level building block used by `issueSDJWT`. Takes `claims` + a `disclosureFrame` and returns `{ claims, disclosures }` as plain objects, with `_sd` digests but no signing or compact serialization. Useful if you need to pack claims without immediately signing/issuing.
+- **`unpackSDJWT(sdjwtPayload, disclosures, getHasher)`** — lower-level building block used by `verifySDJWT`. Resolves `_sd` digests in a payload against an array of disclosures, without doing any signature verification.
+- **`createSDMap(sdjwt, hasher)`** — utility that builds a map of which fields are selectively disclosable, and a lookup from digest to disclosure.
+
+The `disclosureFrame` argument shared by `issueSDJWT` and `packSDJWT` is the main thing you construct by hand — the next section shows how.
+
 ## Disclosure Frame
 
-To issue or pack claims into a valid SD-JWT we use Disclosure Frame to define which properties/values should be selectively diclosable. \
-It follows the following format:
+To pack or issue claims into a valid SD-JWT using `packSDJWT()` or `issueSDJWT()`, you build a Disclosure Frame that defines which properties/values should be selectively disclosable. \
+It should conform to the following type definition:
 
 ```typescript
 type ArrayIndex = number;
@@ -61,6 +116,8 @@ export type DisclosureFrame =
 
 `_sd_decoy` is an optional property that defines the number of decoy digests to add.
 
+The examples below all call `packSDJWT(claims, disclosureFrame, hasher)` to turn `claims` + `disclosureFrame` into the resulting packed claims. Digest values are illustrative — the real ones depend on your `hasher` and randomly generated salts.
+
 ### Examples:
 
 #### set property as selectively disclosable
@@ -68,15 +125,18 @@ export type DisclosureFrame =
 ```js
 const claims = {
   firstname: 'John',
-  lastname: 'Doe'
-}
-const diclosureFrame = {
-  _sd: ['firstname'] // set firstname as selectively discloseable
-}
+  lastname: 'Doe',
+};
 
-// result
-const sdjwt = {
-  _sd: ['LjgwZy8TNXmmPO9mNqVDtq3jiX5r3YS-P-qw2hBNYyU']
+const disclosureFrame = {
+  _sd: ['firstname'], // set firstname as selectively disclosable
+};
+
+const { claims: packed } = await packSDJWT(claims, disclosureFrame, hasher);
+
+// packed
+{
+  _sd: ['LjgwZy8TNXmmPO9mNqVDtq3jiX5r3YS-P-qw2hBNYyU'],
   lastname: 'Doe',
 }
 ```
@@ -88,26 +148,28 @@ const claims = {
   address: {
     street: '123 Main St',
     suburb: 'Anytown',
-    postcode: '1234'
-  }
-}
+    postcode: '1234',
+  },
+};
 
 const disclosureFrame = {
   address: {
-    // set address.street and address.suburb as selectively discloseable
-    _sd: ['street', 'suburb'];
-  }
-}
+    // set address.street and address.suburb as selectively disclosable
+    _sd: ['street', 'suburb'],
+  },
+};
 
-// result
-const sdjwt = {
+const { claims: packed } = await packSDJWT(claims, disclosureFrame, hasher);
+
+// packed
+{
   address: {
     _sd: [
       '02d7bUYevjfAzJ0Gr42ymHy66ezQVL7huNGBO68xSfs',
       'ai7P4vgPZ-Jk1QwL55BLQqtN2gwWy31-pi2VGWiIggs',
     ],
-    postcode: '1234'
-  }
+    postcode: '1234',
+  },
 }
 ```
 
@@ -124,13 +186,15 @@ const disclosureFrame = {
   },
 };
 
-// result
-const sdjwt = {
+const { claims: packed } = await packSDJWT(claims, disclosureFrame, hasher);
+
+// packed
+{
   nicknames: [
     { '...': 'yfhdm_aKTMgm666j79GoXr2mer2dBW0cFfap8iXnAzY' },
     { '...': 'EU0ORASnAlqNtRwttBXsGTISxQ6myFPMBHPE0Ds8aSE' },
   ],
-};
+}
 ```
 
 #### Object in Arrays
@@ -155,8 +219,10 @@ const disclosureFrame = {
   },
 };
 
-// result
-const sdjwt = {
+const { claims: packed } = await packSDJWT(claims, disclosureFrame, hasher);
+
+// packed
+{
   items: [
     {
       _sd: ['7aGqCE9HepzELBi59BvxxriDiV7uiB4yHTyN1im_m4M'],
@@ -165,7 +231,7 @@ const sdjwt = {
     'Towel',
     'Water Bottle',
   ],
-};
+}
 ```
 
 #### Array in Arrays
@@ -186,27 +252,35 @@ const disclosureFrame = {
   },
 };
 
-// result
-const sdjwt = {
+const { claims: packed } = await packSDJWT(claims, disclosureFrame, hasher);
+
+// packed
+{
   colors: [
     [{ '...': '' }, 'G', { '...': '' }],
     ['C', 'Y', 'M', 'K'],
   ],
-};
+}
 ```
+
+See [packSDJWT Examples](#packsdjwt-examples) below for the full function signature, including the `hasher` argument and options.
 
 ## issueSDJWT Example
 
-The `issueSDJWT` function takes a JWT header, payload, and disclosure frame and returns a compact SD-JWT combined with the disclosures.
+The `issueSDJWT` function takes the following arguments and returns a compact SD-JWT combined with the disclosures:
 
-As the library is unopinionated when it comes to how you want to deal with cryptographic functions, so it requires a signer and hasher function to be provided.
-
-Optional Holder key material can be provided in `cnf` options as a `JWK`. \
-Optional custom generateSalt function can also be provided that will be used when creating the claims and decoy claims.
+- **`header`** — the JWT header, e.g. `{ alg: 'ES256', kid: 'issuer-key-id' }`.
+- **`payload`** — the full set of claims to issue: typically some always-visible registered claims (e.g. `iss`, `iat`, `exp`, `sub`) plus any custom claims. `disclosureFrame` decides which of these (usually the custom ones) become selectively disclosable — the rest stay in plain view, left as regular JWT claims.
+- **`disclosureFrame`** — the [Disclosure Frame](#disclosure-frame) above declaring which claims in `payload` should be selectively disclosable.
+- **`opts`** — an options object:
+  - **`signer`** *(required)* — the signer function used to sign the JWT (see [BYOC](#byoc-bring-your-own-crypto) above).
+  - **`hash`** *(required)* — `{ alg: string; callback: Hasher }`; `alg` is recorded in the SD-JWT as `_sd_alg`, and `callback` is the `hasher` function used to compute the `_sd` digests (see [BYOC](#byoc-bring-your-own-crypto) above).
+  - **`cnf`** *(optional)* — Holder key material as a `JWK`, e.g. `{ jwk: holderKey }`, embedded in the payload for public key binding.
+  - **`generateSalt`** *(optional)* — a custom salt-generation function, used when creating disclosures and decoy digests.
 
 ### Basic Usage
 
-Example Using `jose` lib for signer function & `crypto` for hasher;
+Example using the `jose` library for the signer function and `crypto` for the hasher.
 
 ```js
 import crypto from 'crypto'
@@ -254,34 +328,72 @@ const sdjwt = await issueSDJWT(header, payload, disclosureFrame, {
   cnf,
   generateSalt
 });
-
-// Decoded sdjwt.payload
-{
-  iss: 'https://example.com/issuer',
-  iat: 168300000,
-  exp: 188300000,
-  sub: 'subject-id',
-  _sd: [
-    'jlJfq0qqkvwwgPrHh6kfzO2p7hpDYX1Mve-62bHgpHE' // HASH Digest of disclosure
-  ]
-}
-
-// Disclosure
-"WyJ2NEVHUzhKRzlTdW9TUjVGIiwibmFtZSIsIkpvaG4gRG9lIl0" // base64url encode of ["v4EGS8JG9SuoSR5F","name","John Doe"]
 ```
+
+`sdjwt` is a **string** — a regular, signed JWT (`<base64url-header>.<base64url-payload>.<signature>`) with its disclosure(s) appended, joined by `~`:
+
+```
+<jwt>~<disclosure-for-name>~
+```
+
+which, spelled out in full, is:
+
+```
+<base64url-header>.<base64url-payload>.<signature>~<disclosure-for-name>~
+```
+
+For example:
+
+```
+eyJhbGciOiJFUzI1NiIsImtpZCI6Imlzc3Vlci1rZXktaWQiLCJ0eXAiOiJ2YytzZC1qd3QifQ.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tL2lzc3VlciIsImlhdCI6MTY4MzAwMDAwLCJleHAiOjE4ODMwMDAwMCwic3ViIjoic3ViamVjdC1pZCIsIl9zZCI6WyJqbEpmcTBxcWt2d3dnUHJIaDZrZnpPMnA3aHBEWVgxTXZlLTYyYkhncEhFIl0sIl9zZF9hbGciOiJzaGEtMjU2In0.<signature>~WyJ2NEVHUzhKRzlTdW9TUjVGIiwibmFtZSIsIkpvaG4gRG9lIl0~
+```
+
+Breaking that down:
+
+- **JWT header** (first, `.`-separated segment, base64url-decoded):
+
+  ```js
+  {
+    alg: 'ES256',
+    kid: 'issuer-key-id',
+    typ: 'vc+sd-jwt',
+  }
+  ```
+
+- **JWT payload** (middle, `.`-separated segment, base64url-decoded):
+
+  ```js
+  {
+    iss: 'https://example.com/issuer',
+    iat: 168300000,
+    exp: 188300000,
+    sub: 'subject-id',
+    _sd: [
+      'jlJfq0qqkvwwgPrHh6kfzO2p7hpDYX1Mve-62bHgpHE' // hash digest of the disclosure for the `name` claim
+    ],
+    _sd_alg: 'sha-256',
+  }
+  ```
+
+- **Disclosure for `name`** (the piece after the first `~`, base64url-decoded):
+
+  ```js
+  "WyJ2NEVHUzhKRzlTdW9TUjVGIiwibmFtZSIsIkpvaG4gRG9lIl0" // base64url encode of ["v4EGS8JG9SuoSR5F","name","John Doe"]
+  ```
 
 ## verifySDJWT Example
 
-The `verifySDJWT` function takes a Compact combined SD-JWT (include optional disclosures & KB-JWT) \
-**Required**: a verifier function that can verify the JWT signature \
-**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload \
-_Optional_: A Keybinding Verifier function that can verify the embedded holder key \
-Returns SD-JWT with all the disclosed claims.
+The `verifySDJWT` function takes the following arguments and returns the SD-JWT payload with all disclosed claims resolved:
+
+- **`sdjwt`** — the compact, combined SD-JWT string to verify (including optional disclosures & KB-JWT) — see the example produced by `issueSDJWT` in the [previous section](#issuesdjwt-example).
+- **`verifier`** *(required)* — the verifier function used to check the JWT signature (see [BYOC](#byoc-bring-your-own-crypto) above).
+- **`getHasher`** *(required)* — a function that, given the `_sd_alg` from the SD-JWT payload, returns the matching `hasher` used to resolve `_sd` digests.
+- **`opts`** — an options object:
+  - **`kb.verifier`** *(optional)* — a Keybinding Verifier function that can verify the embedded holder key against the KB-JWT.
 
 ### Basic Usage
 
-Example Using `jose` lib for verifier
-Uses `crypto` for Hasher;
+Example using the `jose` library for the verifier function and `crypto` for the hasher.
 
 ```js
 import { importJWK, jwtVerify } from 'jose';
@@ -323,12 +435,25 @@ try {
 }
 ```
 
+If `compactSDJWT` is the string issued in the [`issueSDJWT` example](#issuesdjwt-example) above, `sdJWTwithDisclosedClaims` is a plain object with the `_sd`/`_sd_alg` digests resolved back into their original claims — i.e. the reverse of what `issueSDJWT` produced:
+
+```js
+{
+  iss: 'https://example.com/issuer',
+  iat: 168300000,
+  exp: 188300000,
+  sub: 'subject-id',
+  name: 'John Doe', // resolved from the disclosure
+}
+```
+
 ## unpackSDJWT Example
 
-The `unpackSDJWT` function takes a SD-JWT payload with \_sd digests, array of disclosures and returns the disclosed claims \
-**Required**: a sd-jwt payload with `_sd` digests \
-**Required**: an array of Disclosure objects \
-**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload
+The `unpackSDJWT` function takes the following arguments and returns the disclosed claims:
+
+- **`sdjwt`** *(required)* — an SD-JWT payload containing `_sd` digests.
+- **`disclosures`** *(required)* — an array of Disclosure objects.
+- **`getHasher`** *(required)* — a function that, given the `_sd_alg` from the SD-JWT payload, returns the matching `hasher` used to resolve `_sd` digests.
 
 ### Basic Usage
 
@@ -360,17 +485,24 @@ const sdjwt = {
 };
 
 const result = await unpackSDJWT(sdjwt, disclosures, getHasher);
+
+// result — only digests with a matching disclosure are resolved into claims.
+// `SD_DIGEST_1` is illustrative and assumed here to match the hash of the `disclosures[0]` entry;
+// `SD_DIGEST_2` has no matching disclosure in this example, so it contributes no claim.
+{
+  key_of_disclosed_claim: 'value_of_disclosed_claim',
+}
 ```
 
 ## packSDJWT Examples
 
-The `packSDJWT` function takes a claims object and disclosure frame and returns packed claims with selective disclosures encrypted. \
-**Required**: a claims object \
-**Required**: a disclosureFrame object \
-**Required**: a getHasher function that returns a Hashed depending on the `_sd_alg` in the SD-JWT payload \
-_Optional_: options with custom generateSalt function used in creating claims and decoy claims \
+The `packSDJWT` function takes the following arguments and returns the packed claims (with selective disclosures replaced by digests) and an array of disclosures:
 
-Returns SD-JWT and an array of disclosures.
+- **`claims`** *(required)* — the claims object (or array) to pack.
+- **`disclosureFrame`** *(required)* — the [Disclosure Frame](#disclosure-frame) declaring which claims should be selectively disclosable.
+- **`hasher`** *(required)* — the `hasher` function used to compute the `_sd` digests (see [BYOC](#byoc-bring-your-own-crypto) above).
+- **`options`** *(optional)*:
+  - **`generateSalt`** *(optional)* — a custom salt-generation function, used when creating disclosures and decoy digests.
 
 ### Basic Usage
 
@@ -456,9 +588,10 @@ disclosures = [
 
 ### createSDMap
 
-createSDMap returns \
-**sdMap**: an object representation of the SD claims in an sd-jwt \
-**DisclosureMap**: a map of hash values to get the disclosure and its parent disclosures if the SD claim was recursively packed
+`createSDMap` returns:
+
+- **`sdMap`** — an object representation of the SD claims in an SD-JWT.
+- **`disclosureMap`** — a map of hash values to get the disclosure and its parent disclosures if the SD claim was recursively packed.
 
 ```js
   const { sdMap, disclosureMap } = await createSDMap(sdjwt, hasher);
@@ -515,7 +648,7 @@ npm run dev:setup
 
 ### Test
 
-Runs against examples in `test/examples` directory
+Runs against examples in the `test/examples` directory
 
 Examples are generated using [`sd-jwt-generate`](https://github.com/openwallet-foundation-labs/sd-jwt-python)
 
