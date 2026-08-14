@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (loosely) adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.2.4 - UNRELEASED
+
+### Changed
+
+- Updated devDependencies (esbuild, jest, @types/jest, eslint, @eslint/js, eslint-config-prettier, globals) and fixed the resulting deprecated Jest matcher usages.
+
 ## 1.2.3 - 2026-06-22
 
 ### Fixed

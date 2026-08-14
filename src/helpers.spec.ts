@@ -80,7 +80,7 @@ describe('createDecoy', () => {
 
     createDecoy(1, hasher, generateSalt);
 
-    expect(generateSalt).toBeCalled();
-    expect(hasher).toBeCalledWith('salt');
+    expect(generateSalt).toHaveBeenCalled();
+    expect(hasher).toHaveBeenCalledWith('salt');
   });
 });

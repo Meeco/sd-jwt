@@ -155,8 +155,7 @@ type DisclosureFrameSDAttributes = {
   _decoyCount?: number;
 };
 export type DisclosureFrame =
-  | ({ [key: string | ArrayIndex]: DisclosureFrame } & DisclosureFrameSDAttributes)
-  | DisclosureFrameSDAttributes;
+  ({ [key: string | ArrayIndex]: DisclosureFrame } & DisclosureFrameSDAttributes) | DisclosureFrameSDAttributes;
 
 export type PackedClaims = {
   _sd?: Array<string>;
