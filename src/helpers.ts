@@ -12,7 +12,7 @@ import {
   UnverifiedJWT,
 } from './types.js';
 
-const decoder = new TextDecoder();
+const decoder = new TextDecoder('utf-8', { fatal: true });
 
 export function generateSalt(length: number): string {
   let salt = '';
@@ -46,11 +46,15 @@ export function decodeJWT(input: string): UnverifiedJWT {
     throw new DecodeJWTError('Invalid JWT as input');
   }
 
-  return {
-    header: JSON.parse(base64decode(header)),
-    payload: JSON.parse(base64decode(payload)),
-    signature,
-  };
+  try {
+    return {
+      header: JSON.parse(base64decode(header)),
+      payload: JSON.parse(base64decode(payload)),
+      signature,
+    };
+  } catch (_e) {
+    throw new DecodeJWTError('Invalid JWT as input');
+  }
 }
 
 /**
@@ -61,7 +65,12 @@ export const decodeDisclosures = (disclosures: string[]): Array<Disclosure> => {
 };
 
 export const decodeDisclosure = (disclosure: string): Disclosure => {
-  const decoded = JSON.parse(base64decode(disclosure));
+  let decoded;
+  try {
+    decoded = JSON.parse(base64decode(disclosure));
+  } catch (_e) {
+    throw new UnpackSDJWTError('Invalid disclosure: not valid base64url-encoded UTF-8 JSON');
+  }
 
   // if disclosure is a value in an array
   // [<SALT>, <VALUE>]

@@ -1,6 +1,7 @@
 import crypto from 'crypto';
-import { importJWK, jwtVerify } from 'jose';
+import { importJWK, jwtVerify, SignJWT } from 'jose';
 import { base64encode, decodeJWT } from './helpers';
+import { issueSDJWT } from './issuer';
 import {
   getExamples,
   getIssuerKey,
@@ -8,6 +9,7 @@ import {
   loadPresentation,
   loadVerifiedContents,
 } from './test-utils/helpers';
+import { ISSUER_KEYPAIR } from './test-utils/params';
 import { VerifySDJWTOptions } from './types';
 import { verifySDJWT } from './verifier';
 
@@ -96,5 +98,39 @@ describe('verifySDJWT', () => {
     };
 
     await expect(verifySDJWT(sdjwt, verifier, getHasher, { kb: kbOpts })).rejects.toThrow();
+  });
+
+  it('should reject a presentation containing a disclosure with invalid UTF-8 bytes', async () => {
+    const signer = async (header, payload) => {
+      const issuerPrivateKey = await importJWK(ISSUER_KEYPAIR.PRIVATE_KEY_JWK, header.alg);
+      return (await new SignJWT(payload).setProtectedHeader(header).sign(issuerPrivateKey)).split('.').pop();
+    };
+
+    const hasher = (data) => {
+      const digest = crypto.createHash('sha256').update(data).digest();
+      return base64encode(digest);
+    };
+
+    const payload = {
+      iss: 'https://example.com/issuer',
+      sub: 'subject-id',
+      name: 'John Doe',
+    };
+
+    const sdjwt = await issueSDJWT(
+      { alg: 'ES256' },
+      payload,
+      { _sd: ['name'] },
+      { hash: { alg: 'sha-256', callback: hasher }, signer },
+    );
+
+    // Corrupt the sole disclosure by replacing its base64url text with bytes
+    // that don't decode as valid UTF-8.
+    // Also see https://github.com/openwallet-foundation/sd-jwt-js/security/advisories/GHSA-f9j6-8p6x-r9j6
+    const jwtPart = sdjwt.split('~')[0];
+    const invalidUtf8Disclosure = 'QULyQw'; // base64url of [0x41, 0x42, 0xF2, 0x43]
+    const tampered = `${jwtPart}~${invalidUtf8Disclosure}~`;
+
+    await expect(verifySDJWT(tampered, verifier, getHasher)).rejects.toThrow();
   });
 });

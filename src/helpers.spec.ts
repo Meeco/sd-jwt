@@ -1,5 +1,5 @@
-import { CreateDecoyError } from './errors';
-import { base64decode, base64encode, createDecoy, createDisclosureMap } from './helpers';
+import { CreateDecoyError, UnpackSDJWTError } from './errors';
+import { base64decode, base64encode, createDecoy, createDisclosureMap, decodeDisclosure } from './helpers';
 import crypto from 'crypto';
 
 const disclosure: string[] = ['5a2W0_NrlEZzfqmk_7Pq-w', 'administeringCentre', 'Praxis Sommergarten'];
@@ -18,6 +18,25 @@ describe('base64decode', () => {
   it('should decode a base64url encoded string', () => {
     const decoded = base64decode(encodedDisclosure);
     expect(JSON.parse(decoded)).toEqual(disclosure);
+  });
+
+  it('should throw instead of lossy-decoding a string with invalid UTF-8 bytes', () => {
+    // base64url of the bytes [0x41, 0x42, 0xF2, 0x43] - 'AB' + an invalid UTF-8 lead byte + 'C'.
+    const invalidUtf8 = 'QULyQw';
+
+    expect(() => base64decode(invalidUtf8)).toThrow();
+  });
+});
+
+describe('decodeDisclosure', () => {
+  it('should throw UnpackSDJWTError for a disclosure containing invalid UTF-8 bytes', () => {
+    // base64url of the bytes [0x41, 0x42, 0xF2, 0x43] - 'AB' + an invalid UTF-8 lead byte + 'C'.
+    const invalidUtf8Disclosure = 'QULyQw';
+
+    expect(() => decodeDisclosure(invalidUtf8Disclosure)).toThrow(UnpackSDJWTError);
+    expect(() => decodeDisclosure(invalidUtf8Disclosure)).toThrow(
+      'Invalid disclosure: not valid base64url-encoded UTF-8 JSON',
+    );
   });
 });
 
