@@ -107,7 +107,7 @@ export const createHashMapping = (disclosures: Disclosure[], hasher: Hasher): Sd
  * inserts claim if disclosed
  * removes any undisclosed claims
  */
-export const unpackArray = ({ arr, map }) => {
+export const unpackArray = ({ arr, map, usedHashes }) => {
   const unpackedArray: any[] = [];
   arr.forEach((item) => {
     if (item instanceof Object) {
@@ -122,11 +122,12 @@ export const unpackArray = ({ arr, map }) => {
         }
 
         if (disclosed) {
-          unpackedArray.push(unpack({ obj: disclosed.value, map }));
+          usedHashes?.add(hash);
+          unpackedArray.push(unpack({ obj: disclosed.value, map, usedHashes }));
         }
       } else {
         // unpack recursively
-        unpackedArray.push(unpack({ obj: item, map }));
+        unpackedArray.push(unpack({ obj: item, map, usedHashes }));
       }
     } else {
       unpackedArray.push(item);
@@ -141,17 +142,17 @@ export const unpackArray = ({ arr, map }) => {
  * inserts claims if disclosed
  * removes any undisclosed claims
  */
-export const unpack = ({ obj, map }) => {
+export const unpack = ({ obj, map, usedHashes }: { obj: any; map: SdDigestHashmap; usedHashes?: Set<string> }) => {
   if (obj instanceof Object) {
     if (obj instanceof Array) {
-      return unpackArray({ arr: obj, map });
+      return unpackArray({ arr: obj, map, usedHashes });
     }
 
     for (const key in obj) {
       // if obj property value is an object
       // recursively unpack
       if (key !== SD_DIGEST && key !== SD_LIST_PREFIX && obj[key] instanceof Object) {
-        obj[key] = unpack({ obj: obj[key], map });
+        obj[key] = unpack({ obj: obj[key], map, usedHashes });
       }
     }
 
@@ -162,9 +163,10 @@ export const unpack = ({ obj, map }) => {
       _sd.forEach((hash) => {
         const disclosed = map[hash];
         if (disclosed) {
+          usedHashes?.add(hash);
           validateDisclosedKey(disclosed.key);
 
-          claims[disclosed.key] = unpack({ obj: disclosed.value, map });
+          claims[disclosed.key] = unpack({ obj: disclosed.value, map, usedHashes });
         }
       });
     }

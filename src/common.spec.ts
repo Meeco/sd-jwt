@@ -138,6 +138,45 @@ describe('unpackSDJWT', () => {
       `Invalid disclosure format for array element: expected 2 elements (salt, value)`,
     );
   });
+
+  it('should reject a presentation containing an extra disclosure not referenced by any digest', async () => {
+    const disclosureArray = ['salt', 'name', 'John Doe'];
+    const { digest, decodedDisclosure } = createTestDisclosurePackage(disclosureArray, testHasher);
+    const jwtPayload = createPayloadWithDisclosures([{ digest }], { sub: 'subject-id' });
+
+    // A malicious disclosure that doesn't correspond to any digest in jwtPayload.
+    const maliciousDisclosureArray = ['malicious-salt', 'role', 'admin'];
+    const { decodedDisclosure: maliciousDisclosure } = createTestDisclosurePackage(
+      maliciousDisclosureArray,
+      testHasher,
+    );
+
+    const disclosuresForUnpack = [decodedDisclosure, maliciousDisclosure];
+    const unpackPromise = unpackSDJWT(jwtPayload, disclosuresForUnpack, getHasher);
+
+    await expect(unpackPromise).rejects.toThrow(UnpackSDJWTError);
+    await expect(unpackPromise).rejects.toThrow(
+      'One or more Disclosures were not referenced by digest in the SD-JWT payload',
+    );
+  });
+
+  it('should reject a presentation where a disclosure was substituted for a different one under the same key', async () => {
+    const legitDisclosureArray = ['salt', 'role', 'user'];
+    const { digest } = createTestDisclosurePackage(legitDisclosureArray, testHasher);
+    const jwtPayload = createPayloadWithDisclosures([{ digest }], { sub: 'subject-id' });
+
+    // A forged disclosure for the same key, but not matching the signed digest.
+    const forgedDisclosureArray = ['different-salt', 'role', 'admin'];
+    const { decodedDisclosure: forgedDisclosure } = createTestDisclosurePackage(forgedDisclosureArray, testHasher);
+
+    const disclosuresForUnpack = [forgedDisclosure];
+    const unpackPromise = unpackSDJWT(jwtPayload, disclosuresForUnpack, getHasher);
+
+    await expect(unpackPromise).rejects.toThrow(UnpackSDJWTError);
+    await expect(unpackPromise).rejects.toThrow(
+      'One or more Disclosures were not referenced by digest in the SD-JWT payload',
+    );
+  });
 });
 
 describe('packSDJWT', () => {

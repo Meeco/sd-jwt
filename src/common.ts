@@ -6,7 +6,7 @@ import {
   SD_DIGEST,
   SD_HASH_ALG,
 } from './constants.js';
-import { PackSDJWTError, SDJWTInvalidFormatError } from './errors.js';
+import { PackSDJWTError, SDJWTInvalidFormatError, UnpackSDJWTError } from './errors.js';
 import {
   assertUniqueDigestsInArrayObjects,
   assertUniqueDigestsInStringArray,
@@ -81,7 +81,17 @@ export const unpackSDJWT: UnpackSDJWT = async (sdjwt, disclosures, getHasher) =>
   const map = createHashMapping(disclosures, hasher);
 
   const { _sd_alg, ...payload } = sdjwt;
-  return unpack({ obj: payload, map });
+  const usedHashes = new Set<string>();
+  const result = unpack({ obj: payload, map, usedHashes });
+
+  // https://www.rfc-editor.org/rfc/rfc9901.html#name-verification-of-the-sd-jwt
+  // RFC 9901 §7.1 step 5:
+  // >> If any Disclosure was not referenced by digest value in the Issuer-signed JWT
+  // >> (directly or recursively via other Disclosures), the SD-JWT MUST be rejected.
+  if (usedHashes.size !== disclosures.length)
+    throw new UnpackSDJWTError('One or more Disclosures were not referenced by digest in the SD-JWT payload');
+
+  return result;
 };
 
 /**

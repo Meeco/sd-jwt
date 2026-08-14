@@ -7,6 +7,11 @@ and this project (loosely) adheres to [Semantic Versioning](https://semver.org/s
 
 ## 1.2.4 - UNRELEASED
 
+### Security
+
+- Reject SD-JWT presentations containing a Disclosure that isn't referenced by any digest in the payload, per RFC 9901 §7.1 step 5. Prevents an attacker from smuggling in an extra or substituted Disclosure alongside a legitimately signed one.
+- Reject disclosures and JWT parts containing invalid UTF-8 instead of silently lossy-decoding them.
+
 ### Changed
 
 - Updated devDependencies (esbuild, jest, @types/jest, eslint, @eslint/js, eslint-config-prettier, globals) and fixed the resulting deprecated Jest matcher usages.
