@@ -263,7 +263,7 @@ const { claims: packed } = await packSDJWT(claims, disclosureFrame, hasher);
 }
 ```
 
-See [packSDJWT Examples](#packsdjwt-examples) below for the full function signature, including the `hasher` argument and options.
+See [packSDJWT Example](#packsdjwt-example) below for the full function signature, including the `hasher` argument and options.
 
 ## issueSDJWT Example
 
@@ -278,30 +278,12 @@ The `issueSDJWT` function takes the following arguments and returns a compact SD
   - **`cnf`** *(optional)* — Holder key material as a `JWK`, e.g. `{ jwk: holderKey }`, embedded in the payload for public key binding.
   - **`generateSalt`** *(optional)* — a custom salt-generation function, used when creating disclosures and decoy digests.
 
-### Basic Usage
 
 Example using the `jose` library for the signer function and `crypto` for the hasher.
 
 ```js
 import crypto from 'crypto'
 import { SignJWT, importJWK } from 'jose';
-
-const header = {
-  alg: 'ES256',
-  kid: 'issuer-key-id'
-};
-
-const payload = {
-  iss: 'https://example.com/issuer',
-  iat: 168300000,
-  exp: 188300000,
-  sub: 'subject-id',
-  name: 'John Doe'
-};
-
-const disclosureFrame = {
-  _sd: ['name']
-};
 
 const signer = async (header, payload) => {
   const issuerPrivateKey = await importJWK(ISSUER_KEYPAIR.PRIVATE_KEY_JWK, header.alg);
@@ -315,9 +297,27 @@ const hasher = (data) => {
   return Promise.resolve(hash);
 };
 
+const header = {
+  alg: 'ES256',
+  kid: 'issuer-key-id'
+};
+
+const payload = {
+  iss: 'https://example.com/issuer',
+  iat: 168300000,
+  exp: 188300000,
+  sub: 'subject-id',
+  name: 'John Doe',
+  email: 'john.doe@example.com'
+};
+
+const disclosureFrame = {
+  _sd: ['name', 'email']
+};
+
 // Optional
 const cnf = { jwk: holderKey }
-const generateSalt = generateSaltFunction
+const generateSalt = (length) => crypto.randomBytes(length).toString('hex');
 
 const sdjwt = await issueSDJWT(header, payload, disclosureFrame, {
   hash: {
@@ -330,22 +330,22 @@ const sdjwt = await issueSDJWT(header, payload, disclosureFrame, {
 });
 ```
 
-`sdjwt` is a **string** — a regular, signed JWT (`<base64url-header>.<base64url-payload>.<signature>`) with its disclosure(s) appended, joined by `~`:
+`sdjwt` is a **string** — a regular, signed JWT (`<base64url-header>.<base64url-payload>.<signature>`) with its disclosures appended, joined by `~`:
 
 ```
-<jwt>~<disclosure-for-name>~
+<jwt>~<disclosure-for-name>~<disclosure-for-email>~
 ```
 
 which, spelled out in full, is:
 
 ```
-<base64url-header>.<base64url-payload>.<signature>~<disclosure-for-name>~
+<base64url-header>.<base64url-payload>.<signature>~<disclosure-for-name>~<disclosure-for-email>~
 ```
 
 For example:
 
 ```
-eyJhbGciOiJFUzI1NiIsImtpZCI6Imlzc3Vlci1rZXktaWQiLCJ0eXAiOiJ2YytzZC1qd3QifQ.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tL2lzc3VlciIsImlhdCI6MTY4MzAwMDAwLCJleHAiOjE4ODMwMDAwMCwic3ViIjoic3ViamVjdC1pZCIsIl9zZCI6WyJqbEpmcTBxcWt2d3dnUHJIaDZrZnpPMnA3aHBEWVgxTXZlLTYyYkhncEhFIl0sIl9zZF9hbGciOiJzaGEtMjU2In0.<signature>~WyJ2NEVHUzhKRzlTdW9TUjVGIiwibmFtZSIsIkpvaG4gRG9lIl0~
+eyJhbGciOiJFUzI1NiIsImtpZCI6Imlzc3Vlci1rZXktaWQiLCJ0eXAiOiJ2YytzZC1qd3QifQ.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tL2lzc3VlciIsImlhdCI6MTY4MzAwMDAwLCJleHAiOjE4ODMwMDAwMCwic3ViIjoic3ViamVjdC1pZCIsIl9zZCI6WyI2RGRid2ViY0Y2ZmlnTkUyTGpOVGFqVDFOVENWTVY1VHNMYUUycTFBeGZjIiwiamxKZnEwcXFrdnd3Z1BySGg2a2Z6TzJwN2hwRFlYMU12ZS02MmJIZ3BIRSJdLCJfc2RfYWxnIjoic2hhLTI1NiJ9.<signature>~WyJ2NEVHUzhKRzlTdW9TUjVGIiwibmFtZSIsIkpvaG4gRG9lIl0~WyJLeDlRelAybVl0TmM0UnZ3IiwiZW1haWwiLCJqb2huLmRvZUBleGFtcGxlLmNvbSJd~
 ```
 
 Breaking that down:
@@ -369,17 +369,30 @@ Breaking that down:
     exp: 188300000,
     sub: 'subject-id',
     _sd: [
-      'jlJfq0qqkvwwgPrHh6kfzO2p7hpDYX1Mve-62bHgpHE' // hash digest of the disclosure for the `name` claim
+      '6DdbwebcF6figNE2LjNTajT1NTCVMV5TsLaE2q1Axfc', // hash digest of the disclosure for the `email` claim
+      'jlJfq0qqkvwwgPrHh6kfzO2p7hpDYX1Mve-62bHgpHE', // hash digest of the disclosure for the `name` claim
     ],
     _sd_alg: 'sha-256',
   }
   ```
+
+  Note `_sd` is sorted alphabetically by digest value — `packSDJWT` sorts it so that the position of a digest in the array never leaks which claim it discloses.
 
 - **Disclosure for `name`** (the piece after the first `~`, base64url-decoded):
 
   ```js
   "WyJ2NEVHUzhKRzlTdW9TUjVGIiwibmFtZSIsIkpvaG4gRG9lIl0" // base64url encode of ["v4EGS8JG9SuoSR5F","name","John Doe"]
   ```
+
+  `v4EGS8JG9SuoSR5F` is the random salt for this disclosure, produced by `generateSalt`. It's included so the digest can't be brute-forced from the (often guessable) key/value alone.
+
+- **Disclosure for `email`** (the piece after the second `~`, base64url-decoded):
+
+  ```js
+  "WyJLeDlRelAybVl0TmM0UnZ3IiwiZW1haWwiLCJqb2huLmRvZUBleGFtcGxlLmNvbSJd" // base64url encode of ["Kx9QzP2mYtNc4Rvw","email","john.doe@example.com"]
+  ```
+
+  `Kx9QzP2mYtNc4Rvw` is this disclosure's own salt — every disclosure gets a fresh independent salt.
 
 ## verifySDJWT Example
 
@@ -391,12 +404,22 @@ The `verifySDJWT` function takes the following arguments and returns the SD-JWT 
 - **`opts`** — an options object:
   - **`kb.verifier`** *(optional)* — a Keybinding Verifier function that can verify the embedded holder key against the KB-JWT.
 
-### Basic Usage
-
 Example using the `jose` library for the verifier function and `crypto` for the hasher.
 
 ```js
 import { importJWK, jwtVerify } from 'jose';
+
+const getHasher = (hashAlg) => {
+  let hasher;
+  // Default Hasher = Hasher for SHA-256
+  if (!hashAlg || hashAlg.toLowerCase() === 'sha-256') {
+    hasher = (data) => {
+      const digest = crypto.createHash('sha256').update(data).digest();
+      return base64encode(digest);
+    };
+  }
+  return Promise.resolve(hasher);
+};
 
 const verifier = async (jwt) => {
   const key = await getIssuerKey(); // Get SD-JWT issuer public key
@@ -411,23 +434,16 @@ const keyBindingVerifier = (kbjwt, holderJWK) => {
   return !!verifiedKbJWT;
 }
 
-const getHasher = (hashAlg) => {
-  let hasher;
-  // Default Hasher = Hasher for SHA-256
-  if (!hashAlg || hashAlg.toLowerCase() === 'sha-256') {
-    hasher = (data) => {
-      const digest = crypto.createHash('sha256').update(data).digest();
-      return base64encode(digest);
-    };
-  }
-  return Promise.resolve(hasher);
-};
-
 const opts = {
   kb: {
     verifier: keyBindingVerifier
   }
 }
+
+// The `sdjwt` string produced by the `issueSDJWT` example above.
+const compactSDJWT =
+  'eyJhbGciOiJFUzI1NiIsImtpZCI6Imlzc3Vlci1rZXktaWQiLCJ0eXAiOiJ2YytzZC1qd3QifQ.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tL2lzc3VlciIsImlhdCI6MTY4MzAwMDAwLCJleHAiOjE4ODMwMDAwMCwic3ViIjoic3ViamVjdC1pZCIsIl9zZCI6WyI2RGRid2ViY0Y2ZmlnTkUyTGpOVGFqVDFOVENWTVY1VHNMYUUycTFBeGZjIiwiamxKZnEwcXFrdnd3Z1BySGg2a2Z6TzJwN2hwRFlYMU12ZS02MmJIZ3BIRSJdLCJfc2RfYWxnIjoic2hhLTI1NiJ9.<signature>~WyJ2NEVHUzhKRzlTdW9TUjVGIiwibmFtZSIsIkpvaG4gRG9lIl0~WyJLeDlRelAybVl0TmM0UnZ3IiwiZW1haWwiLCJqb2huLmRvZUBleGFtcGxlLmNvbSJd~';
+
 try {
   const sdJWTwithDisclosedClaims = await verifySDJWT(compactSDJWT, verifier, getHasher, opts);
 } catch (e) {
@@ -435,7 +451,7 @@ try {
 }
 ```
 
-If `compactSDJWT` is the string issued in the [`issueSDJWT` example](#issuesdjwt-example) above, `sdJWTwithDisclosedClaims` is a plain object with the `_sd`/`_sd_alg` digests resolved back into their original claims — i.e. the reverse of what `issueSDJWT` produced:
+Since `compactSDJWT` is the string issued in the [`issueSDJWT` example](#issuesdjwt-example) above, `sdJWTwithDisclosedClaims` is a plain object with the `_sd`/`_sd_alg` digests resolved back into their original claims — i.e. the reverse of what `issueSDJWT` produced:
 
 ```js
 {
@@ -444,10 +460,110 @@ If `compactSDJWT` is the string issued in the [`issueSDJWT` example](#issuesdjwt
   exp: 188300000,
   sub: 'subject-id',
   name: 'John Doe', // resolved from the disclosure
+  email: 'john.doe@example.com', // resolved from the disclosure
 }
 ```
 
+## packSDJWT Example
+
+`packSDJWT` is the lower-level building block that [`issueSDJWT`](#issuesdjwt-example) calls internally. Compared to `issueSDJWT`:
+
+- **Functionality** — `packSDJWT` only replaces selectively disclosable claims with `_sd` digests and returns the packed claims + disclosures as plain objects; it does not sign anything or produce a compact SD-JWT string. Use it directly if you need packed claims without immediately signing/issuing (e.g. to sign them yourself, or to inspect/store them before issuance).
+- **Arguments** — `packSDJWT` has no `header` and no `signer`/`cnf` (there's nothing to sign or bind a holder key to at this level). Its `hasher` is passed directly as a plain function, rather than wrapped in `issueSDJWT`'s `{ hash: { alg, callback } }` (there's no `_sd_alg` to record, since `packSDJWT` doesn't produce a JWT payload).
+
+The `packSDJWT` function takes the following arguments and returns the packed claims (with selective disclosures replaced by digests) and an array of disclosures:
+
+- **`claims`** *(required)* — the claims object (or array) to pack.
+- **`disclosureFrame`** *(required)* — the [Disclosure Frame](#disclosure-frame) declaring which claims should be selectively disclosable.
+- **`hasher`** *(required)* — the `hasher` function used to compute the `_sd` digests (see [BYOC](#byoc-bring-your-own-crypto) above).
+- **`options`** *(optional)*:
+  - **`generateSalt`** *(optional)* — a custom salt-generation function, used when creating disclosures and decoy digests.
+
+### Basic Usage
+
+```js
+import crypto from 'crypto';
+import { packSDJWT } from 'sd-jwt';
+
+const claims = {
+  name: 'John Doe',
+  email: 'john.doe@example.com',
+};
+
+const disclosureFrame = {
+  _sd: ['name', 'email'],
+};
+
+const hasher = (data) => {
+  const digest = crypto.createHash('sha256').update(data).digest();
+  const hash = Buffer.from(digest).toString('base64url');
+  return Promise.resolve(hash);
+};
+
+const options = {
+  generateSalt: generateSaltFunction,
+};
+
+const { claims: packed, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, options);
+```
+
+This will selectively disclose `name` and `email` — the same two claims disclosed in the [`issueSDJWT` example](#issuesdjwt-example) above, so the digests and disclosures below match that example's exactly. `packed` is the original claims with those two replaced by `_sd` digests, and `disclosures` holds the corresponding Disclosure strings:
+
+```js
+// packed
+{
+  _sd: ['6DdbwebcF6figNE2LjNTajT1NTCVMV5TsLaE2q1Axfc', 'jlJfq0qqkvwwgPrHh6kfzO2p7hpDYX1Mve-62bHgpHE'],
+}
+
+// disclosures
+[
+  'WyJ2NEVHUzhKRzlTdW9TUjVGIiwibmFtZSIsIkpvaG4gRG9lIl0', // base64url encode of ["v4EGS8JG9SuoSR5F","name","John Doe"]
+  'WyJLeDlRelAybVl0TmM0UnZ3IiwiZW1haWwiLCJqb2huLmRvZUBleGFtcGxlLmNvbSJd', // base64url encode of ["Kx9QzP2mYtNc4Rvw","email","john.doe@example.com"]
+]
+```
+
+### Partially Disclosing an Array
+
+Unlike the [Array item](#array-item) example above, which discloses every item in the array, `disclosureFrame` can target only some indices - the rest stay as plain values:
+
+```js
+const claims = {
+  nicknames: ['JD', 'Johnny', 'The Doe'],
+};
+
+const disclosureFrame = {
+  nicknames: { _sd: [1] }, // only the item at index 1 ('Johnny') is disclosed
+};
+
+const { claims: packedClaims, disclosures } = await packSDJWT(claims, disclosureFrame, hasher);
+```
+
+`'JD'` and `'The Doe'` remain as plain values in `packedClaims`, while `'Johnny'` is replaced by its digest:
+
+```js
+// packedClaims
+{
+  nicknames: [
+    'JD',
+    {
+      '...': 'GPyjlbT6dC0gh5hnkqW8JeiDdpTBnRUUqX_zQmZO5LA',
+    },
+    'The Doe',
+  ],
+}
+
+// disclosures
+[
+  'WyJsa2x4RjVqTVlsR1RQVW92TU5JdkNBIiwiSm9obm55Il0', // base64url encode of ["lklxF5jMYlGTPUovMNIvCA","Johnny"]
+]
+```
+
 ## unpackSDJWT Example
+
+`unpackSDJWT` is the lower-level building block that [`verifySDJWT`](#verifysdjwt-example) calls internally. Compared to `verifySDJWT`:
+
+- **Functionality** — `unpackSDJWT` hashes each supplied Disclosure with the `hasher` from `getHasher`, and matches the resulting digest against the `_sd` values in the payload; only Disclosures whose digest is actually found in `_sd` get resolved into claims. It does not check a JWT signature or a key binding JWT — so it doesn't verify that the SD-JWT was actually issued by whoever it claims to be from, only that the disclosures you handed it match the digests present in the payload. Use it directly if you already have a trusted/decoded SD-JWT payload and disclosures, and just need the digests resolved without any signature/key-binding verification step.
+- **Arguments** — `unpackSDJWT` takes no `verifier` and no `opts.kb.verifier` (there's no signature or key binding to check at this level). It also takes the already-decoded `sdjwt` payload and `disclosures` array directly, rather than the single compact SD-JWT string `verifySDJWT` accepts (splitting and decoding that string is exactly what `verifySDJWT` does before calling `unpackSDJWT`).
 
 The `unpackSDJWT` function takes the following arguments and returns the disclosed claims:
 
@@ -474,114 +590,34 @@ const getHasher = (hashAlg) => {
 
 const disclosures = [
   {
-    disclosure: 'disclosure_array_as_string', // [<salt>, <key>, <value>]
-    key: 'key_of_disclosed_claim',
-    value: 'value_of_disclosed_claim',
+    // base64url encode of ["v4EGS8JG9SuoSR5F","name","John Doe"]
+    disclosure: 'WyJ2NEVHUzhKRzlTdW9TUjVGIiwibmFtZSIsIkpvaG4gRG9lIl0', 
+    key: 'name',
+    value: 'John Doe',
+  },
+  {
+    // base64url encode of ["Kx9QzP2mYtNc4Rvw","email","john.doe@example.com"]
+    disclosure: 'WyJLeDlRelAybVl0TmM0UnZ3IiwiZW1haWwiLCJqb2huLmRvZUBleGFtcGxlLmNvbSJd', 
+    key: 'email',
+    value: 'john.doe@example.com',
   },
 ];
 
 const sdjwt = {
-  _sd: ['SD_DIGEST_1', 'SD_DIGEST_2'],
+  _sd: ['6DdbwebcF6figNE2LjNTajT1NTCVMV5TsLaE2q1Axfc', 'jlJfq0qqkvwwgPrHh6kfzO2p7hpDYX1Mve-62bHgpHE'],
 };
 
 const result = await unpackSDJWT(sdjwt, disclosures, getHasher);
+```
 
-// result — only digests with a matching disclosure are resolved into claims.
-// `SD_DIGEST_1` is illustrative and assumed here to match the hash of the `disclosures[0]` entry;
-// `SD_DIGEST_2` has no matching disclosure in this example, so it contributes no claim.
+Each entry in `disclosures` is hashed and checked against `sdjwt._sd`: the hash of the `name` Disclosure matches `jlJfq0qqkvwwgPrHh6kfzO2p7hpDYX1Mve-62bHgpHE`, and the hash of the `email` Disclosure matches `6DdbwebcF6figNE2LjNTajT1NTCVMV5TsLaE2q1Axfc` — so both are resolved back into `result` as plain claims. These are the same two claims disclosed throughout the [`issueSDJWT`](#issuesdjwt-example), [`verifySDJWT`](#verifysdjwt-example) and [`packSDJWT`](#packsdjwt-example) examples above, so the digests and disclosures here match those exactly:
+
+```js
+// result
 {
-  key_of_disclosed_claim: 'value_of_disclosed_claim',
+  name: 'John Doe',
+  email: 'john.doe@example.com',
 }
-```
-
-## packSDJWT Examples
-
-The `packSDJWT` function takes the following arguments and returns the packed claims (with selective disclosures replaced by digests) and an array of disclosures:
-
-- **`claims`** *(required)* — the claims object (or array) to pack.
-- **`disclosureFrame`** *(required)* — the [Disclosure Frame](#disclosure-frame) declaring which claims should be selectively disclosable.
-- **`hasher`** *(required)* — the `hasher` function used to compute the `_sd` digests (see [BYOC](#byoc-bring-your-own-crypto) above).
-- **`options`** *(optional)*:
-  - **`generateSalt`** *(optional)* — a custom salt-generation function, used when creating disclosures and decoy digests.
-
-### Basic Usage
-
-```js
-import { packSDJWT } from 'sd-jwt';
-
-const claims = {
-  name: 'Jane',
-  ssn: '123-45-6789',
-};
-
-const disclosureFrame = {
-  _sd: ['ssn'],
-};
-
-const hasher = hasherFunction;
-
-const options = {
-  generateSalt: generateSaltFunction,
-};
-
-const { claims: packed, disclosures } = await packSDJWT(claims, disclosureFrame, hasher, options);
-```
-
-This will selectively disclose `ssn` and return the packed claims and disclosures array.
-
-### Disclosing Multiple Claims
-
-To selectively disclose multiple claims:
-
-```js
-const claims = {
-  name: 'Jane Doe',
-  ssn: '123-45-6789',
-  id: '1234',
-};
-
-const disclosureFrame = {
-  _sd: ['ssn', 'id'],
-};
-
-const { claims: packed, disclosures } = await packSDJWT(claims, disclosureFrame, hasher);
-
-// Results
-packed = {
-  name: 'Jane Doe',
-  _sd: ['DZkUdg_W43hB25uuSxEyt2ialCeDbweHVXcRrhQHbLY', '85kfxIj8lWd5WODcupbDiYEw6upYWoD1GI048JUVAHw'],
-};
-
-disclosures = ['WyJzNnZtNTJzWjN3Y1NXNUEzIiwic3NuIiwiMTIzLTQ1LTY3ODkiXQ', 'WyJxZEt6MURIVDRlOHBpWlZ5IiwiaWQiLCIxMjM0Il0'];
-```
-
-### Selective Disclosable items in array
-
-```js
-const claims = {
-  items: ['a', 'b', 'c'],
-};
-
-const disclosureFrame = {
-  items: { _sd: [1] }, // item at index 1
-};
-
-const { claims: packedClaims, disclosures } = await packSDJWT(claims, disclosureFrame, hasher);
-
-// Results
-packedClaims = {
-  items: [
-    'a',
-    {
-      '...': 'b64encodedhash',
-    },
-    'c',
-  ],
-};
-
-disclosures = [
-  'WyJzYWx0IiwgMV0=', // b64 encoded [salt, 'b']
-];
 ```
 
 ## Selectively Disclosable Map
