@@ -1,4 +1,4 @@
-import { Disclosure } from 'src/types.js';
+import { Disclosure } from '../types.js';
 
 export const mockStringDisclosure: Disclosure = {
   disclosure: 'mocked-string-disclosure',

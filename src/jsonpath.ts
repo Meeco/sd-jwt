@@ -52,7 +52,7 @@ export class SDJWTDisclosureStruct {
       return digest;
     });
 
-    const selectedDigests = new Set();
+    const selectedDigests = new Set<string>();
 
     digests.forEach((digest) => {
       selectedDigests.add(digest);
@@ -60,7 +60,7 @@ export class SDJWTDisclosureStruct {
       parentDigests.forEach((digest: string) => selectedDigests.add(digest));
     });
 
-    const disclosures = [...selectedDigests].map((digest: string) => this.digestMap.get(digest)?.disclosure);
+    const disclosures = [...selectedDigests].map((digest) => this.digestMap.get(digest)?.disclosure);
 
     return disclosures;
   }

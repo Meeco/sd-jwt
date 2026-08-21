@@ -10,6 +10,7 @@ and this project (loosely) adheres to [Semantic Versioning](https://semver.org/s
 ### Changed
 
 - Updated devDependencies (esbuild, jest, @types/jest, eslint, @eslint/js, eslint-config-prettier, globals) and fixed the resulting deprecated Jest matcher usages.
+- Typescript upgraded from 5.6.2 to 6.0.3
 
 ## 1.2.3 - 2026-06-22
 

@@ -8,6 +8,8 @@
     "target": "es2022",
     "outDir": "./dev",
     "baseUrl": "./",
+    "ignoreDeprecations": "6.0",
+    "types": ["node", "jest"],
     "incremental": true,
     "strictNullChecks": false,
     "noImplicitAny": false,

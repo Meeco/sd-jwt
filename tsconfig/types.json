@@ -4,6 +4,7 @@
   "compilerOptions": {
     "module": "nodenext",
     "outDir": "../dist/types",
+    "rootDir": "../src",
     "declaration": true,
     "emitDeclarationOnly": true,
     "removeComments": false,
