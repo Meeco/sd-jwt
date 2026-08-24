@@ -5,12 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (loosely) adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.2.4 - UNRELEASED
+## 1.2.4 - 2026-06-22
 
 ### Security
 
 - Reject SD-JWT presentations containing a Disclosure that isn't referenced by any digest in the payload, per RFC 9901 §7.1 step 5. Prevents an attacker from smuggling in an extra or substituted Disclosure alongside a legitimately signed one.
 - Reject disclosures and JWT parts containing invalid UTF-8 instead of silently lossy-decoding them.
+- Reject SD-JWT presentations with a duplicate disclosure using a distinct error message
 
 ### Changed
 

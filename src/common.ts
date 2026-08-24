@@ -78,6 +78,16 @@ export const decodeSDJWT: DecodeSDJWT = (sdJWT) => {
 export const unpackSDJWT: UnpackSDJWT = async (sdjwt, disclosures, getHasher) => {
   const hashAlg = (sdjwt[SD_HASH_ALG] as string) || DEFAULT_SD_HASH_ALG;
   const hasher = await getHasher(hashAlg);
+
+  const seenHashes = new Set<string>();
+  disclosures.forEach((d) => {
+    const hash = hasher(d.disclosure);
+    if (seenHashes.has(hash))
+      throw new UnpackSDJWTError('Duplicate Disclosure: the same Disclosure was supplied more than once');
+
+    seenHashes.add(hash);
+  });
+
   const map = createHashMapping(disclosures, hasher);
 
   const { _sd_alg, ...payload } = sdjwt;

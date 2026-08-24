@@ -177,6 +177,18 @@ describe('unpackSDJWT', () => {
       'One or more Disclosures were not referenced by digest in the SD-JWT payload',
     );
   });
+
+  it('should reject a duplicate disclosure', async () => {
+    const disclosureArray = ['salt', 'role', 'user'];
+    const { digest, decodedDisclosure } = createTestDisclosurePackage(disclosureArray, testHasher);
+    const jwtPayload = createPayloadWithDisclosures([{ digest }], { sub: 'subject-id' });
+
+    const disclosuresForUnpack = [decodedDisclosure, decodedDisclosure];
+    const unpackPromise = unpackSDJWT(jwtPayload, disclosuresForUnpack, getHasher);
+
+    await expect(unpackPromise).rejects.toThrow(UnpackSDJWTError);
+    await expect(unpackPromise).rejects.toThrow('the same Disclosure was supplied more than once');
+  });
 });
 
 describe('packSDJWT', () => {
