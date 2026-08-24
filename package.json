@@ -4,6 +4,7 @@
   "description": "SD-JWT implementation in typescript",
   "scripts": {
     "build": "tsc",
+    "prebuild": "test -f src/runtime/base64url.ts || npm run runtime-node",
     "build-all": "npm-run-all clear build:*",
     "build:browser": "npm-run-all runtime-browser 'build -- -b ./tsconfig/browser.json' && echo '{\"type\": \"module\"}'> dist/browser/package.json",
     "build:browser-bundle-min": "esbuild --minify --bundle dist/browser/index.js --format=esm --target=es2018 --outfile=dist/browser/index.bundle.min.js",
