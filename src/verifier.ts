@@ -1,6 +1,7 @@
 import { decodeSDJWT, unpackSDJWT } from './common.js';
-import { FORMAT_SEPARATOR } from './constants.js';
+import { FORMAT_SEPARATOR, KB_JWT_TYPE_HEADER } from './constants.js';
 import { VerifySDJWTError } from './errors.js';
+import { decodeJWT } from './helpers.js';
 import { VerifySDJWT } from './types.js';
 
 /**
@@ -48,6 +49,11 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
 
       if (!keyBindingJWT) {
         throw new VerifySDJWTError('No Key Binding JWT found');
+      }
+
+      const { typ } = decodeJWT(keyBindingJWT).header;
+      if (typ !== KB_JWT_TYPE_HEADER) {
+        throw new VerifySDJWTError(`Invalid Key Binding JWT: expected typ '${KB_JWT_TYPE_HEADER}', received '${typ}'`);
       }
 
       try {
