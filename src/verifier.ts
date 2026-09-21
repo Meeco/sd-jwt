@@ -34,8 +34,13 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
 
   const { unverifiedInputSDJWT: jwt, disclosures, keyBindingJWT } = decodeSDJWT(sdjwt);
 
-  if (opts?.kb) {
-    const kb = opts.kb;
+  const kb = opts?.kb;
+
+  if (keyBindingJWT && !kb?.verifier) {
+    throw new VerifySDJWTError('Key Binding JWT found but no KB JWT verifier function was provided');
+  }
+
+  if (kb) {
     const holderPublicKey = jwt.cnf?.jwk;
 
     if (!holderPublicKey) {

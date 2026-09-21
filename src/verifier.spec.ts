@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { importJWK, jwtVerify, SignJWT } from 'jose';
+import { decodeSDJWT } from './common';
 import { base64encode, decodeJWT } from './helpers';
 import { issueSDJWT } from './issuer';
 import {
@@ -66,11 +67,10 @@ describe('verifySDJWT', () => {
     const kbjwt = await loadKeyBindingJWT(example);
 
     let opts;
-    const kbjwtExist = !!kbjwt && typeof kbjwt === 'object' && Object.keys(kbjwt).length > 0;
-    if (expectedResult.cnf && kbjwtExist) {
+    if (decodeSDJWT(sdjwt).keyBindingJWT) {
       opts = {
         kb: {
-          verifier: getKbVerifier(kbjwt.aud, kbjwt.nonce),
+          verifier: getKbVerifier(kbjwt?.aud, kbjwt?.nonce),
         },
       };
     }

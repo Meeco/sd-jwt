@@ -81,5 +81,26 @@ describe('verifySDJWT', () => {
         verifySDJWT(`${presentation}${kbjwt}`, verifier, getHasher, { kb: { verifier: kbVerifier } }),
       ).rejects.toThrow("expected typ 'kb+jwt', received 'jwt'");
     });
+
+    it('rejects a presentation carrying a KB-JWT when no KB verifier is supplied', async () => {
+      const presentation = await issue();
+      const kbjwt = await signKBJWT(presentation);
+
+      await expect(verifySDJWT(`${presentation}${kbjwt}`, verifier, getHasher)).rejects.toThrow(
+        'Key Binding JWT found but no KB JWT verifier function was provided',
+      );
+    });
+
+    it('requires a KB-JWT once a KB verifier is supplied', async () => {
+      const presentation = await issue(); // no KB-JWT appended
+
+      await expect(verifySDJWT(presentation, verifier, getHasher, { kb: { verifier: kbVerifier } })).rejects.toThrow(
+        'No Key Binding JWT found',
+      );
+
+      // Without a KB verifier the same presentation verifies.
+      const result = await verifySDJWT(presentation, verifier, getHasher);
+      expect(result).toMatchObject({ given_name: 'Max', is_over_18: true });
+    });
   });
 });

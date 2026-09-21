@@ -8,6 +8,7 @@ and this project (loosely) adheres to [Semantic Versioning](https://semver.org/s
 ## 1.3.0 - UNRELEASED
 
 - fix: reject a Key Binding JWT whose typ header is not kb+jwt
+- fix: a Key Binding JWT that is present must always be verified; previously it was ignored unless `kb.verifier` was supplied
 
 ## 1.2.4 - 2026-08-24
 
