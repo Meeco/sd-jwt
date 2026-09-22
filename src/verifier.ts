@@ -1,5 +1,5 @@
 import { decodeSDJWT, unpackSDJWT } from './common.js';
-import { FORMAT_SEPARATOR, KB_JWT_TYPE_HEADER } from './constants.js';
+import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, KB_JWT_TYPE_HEADER, SD_HASH_ALG } from './constants.js';
 import { VerifySDJWTError } from './errors.js';
 import { decodeJWT } from './helpers.js';
 import { VerifySDJWT } from './types.js';
@@ -68,6 +68,21 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
         }
       } catch (_e) {
         throw new VerifySDJWTError('Failed to verify Key Binding JWT');
+      }
+
+      const presentationWithoutKBJWT = sdjwt.slice(0, sdjwt.lastIndexOf(FORMAT_SEPARATOR) + 1);
+      const sdHashAlg = (jwt[SD_HASH_ALG] as string) || DEFAULT_SD_HASH_ALG;
+      const sdHasher = await getHasher(sdHashAlg);
+
+      if (typeof sdHasher !== 'function') {
+        throw new VerifySDJWTError(`GetHasher returned no hasher for '${sdHashAlg}'`);
+      }
+
+      const signedSdHash = decodeJWT(keyBindingJWT).payload.sd_hash;
+      const presentedSdHash = sdHasher(presentationWithoutKBJWT);
+
+      if (signedSdHash !== presentedSdHash) {
+        throw new VerifySDJWTError('Key Binding JWT sd_hash does not match the presented SD-JWT');
       }
     }
   }

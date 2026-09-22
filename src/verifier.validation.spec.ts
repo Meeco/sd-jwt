@@ -102,5 +102,64 @@ describe('verifySDJWT', () => {
       const result = await verifySDJWT(presentation, verifier, getHasher);
       expect(result).toMatchObject({ given_name: 'Max', is_over_18: true });
     });
+
+    // A KB-JWT signed over both disclosures is reused while presenting only one of them.
+    it('rejects a presentation whose disclosures were removed after the KB-JWT was signed', async () => {
+      const fullPresentation = await issue();
+      const kbjwt = await signKBJWT(fullPresentation); // its sd_hash covers BOTH disclosures
+
+      // '<jwt>~<d:given_name>~<d:is_over_18>~' -> ['<jwt>', '<d:given_name>', '<d:is_over_18>'].
+      // filter(Boolean) drops the empty segment left by the trailing separator.
+      const segments = fullPresentation.split('~').filter(Boolean);
+      const issuerSignedJwt = segments[0];
+      const allDisclosures = segments.slice(1);
+
+      // Everything except the last disclosure (is_over_18).
+      const keptDisclosures = allDisclosures.slice(0, -1);
+
+      // Re-assemble a valid presentation - every one of them ends with a separator.
+      const strippedPresentation = `${issuerSignedJwt}~${keptDisclosures.join('~')}~`;
+
+      // The untouched KB-JWT, now appended to content it was never signed over.
+      const strippedSdJwtKb = `${strippedPresentation}${kbjwt}`;
+
+      await expect(verifySDJWT(strippedSdJwtKb, verifier, getHasher, { kb: { verifier: kbVerifier } })).rejects.toThrow(
+        'Key Binding JWT sd_hash does not match the presented SD-JWT',
+      );
+    });
+
+    // A KB-JWT signed over a minimal presentation is reused to present a disclosure the holder withheld.
+    it('rejects a presentation carrying a disclosure the KB-JWT never covered', async () => {
+      const fullPresentation = await issue();
+
+      const segments = fullPresentation.split('~').filter(Boolean);
+      const issuerSignedJwt = segments[0];
+      const allDisclosures = segments.slice(1);
+
+      // The holder withholds is_over_18 and shows given_name only.
+      const shownDisclosures = allDisclosures.slice(0, 1);
+
+      const minimalPresentation = `${issuerSignedJwt}~${shownDisclosures.join('~')}~`;
+      const kbjwt = await signKBJWT(minimalPresentation); // its sd_hash covers ONE disclosure
+
+      // The same KB-JWT, now appended to the full presentation the holder never signed over.
+      const inflatedSdJwtKb = `${fullPresentation}${kbjwt}`;
+
+      await expect(verifySDJWT(inflatedSdJwtKb, verifier, getHasher, { kb: { verifier: kbVerifier } })).rejects.toThrow(
+        'Key Binding JWT sd_hash does not match the presented SD-JWT',
+      );
+    });
+
+    it('rejects a KB-JWT without an sd_hash claim', async () => {
+      const presentation = await issue();
+
+      const kbjwtWithoutSdHash = await new SignJWT({ aud: AUDIENCE, nonce: NONCE, iat: Math.floor(Date.now() / 1000) })
+        .setProtectedHeader({ alg: 'ES256', typ: 'kb+jwt' })
+        .sign(holderPrivateKey);
+
+      await expect(
+        verifySDJWT(`${presentation}${kbjwtWithoutSdHash}`, verifier, getHasher, { kb: { verifier: kbVerifier } }),
+      ).rejects.toThrow('Key Binding JWT sd_hash does not match the presented SD-JWT');
+    });
   });
 });
