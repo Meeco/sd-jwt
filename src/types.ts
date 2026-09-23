@@ -215,6 +215,10 @@ export interface VerifySDJWTOptions {
   };
   kb?: {
     verifier?: KeyBindingVerifier;
+    // How far the Key Binding JWT's iat may be from now, in either direction.
+    // Checked by default, with DEFAULT_KB_IAT_SKEW_SECONDS; pass false to accept
+    // a proof of possession of any age
+    iat?: false | { skewSeconds?: number };
   };
 }
 /**

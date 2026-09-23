@@ -13,3 +13,5 @@ export const KB_JWT_TYPE_HEADER = 'kb+jwt';
 export const SD_LIST_PREFIX = '...';
 export const SD_JWT_TYPE = 'sd+jwt';
 export const FORBIDDEN_KEYS_IN_DISCLOSURE = [SD_DIGEST, SD_LIST_PREFIX];
+// How far the Key Binding JWT's iat may be from now by default, in either direction.
+export const DEFAULT_KB_IAT_SKEW_SECONDS = 600;

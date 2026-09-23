@@ -161,6 +161,58 @@ describe('verifySDJWT', () => {
         verifySDJWT(`${presentation}${kbjwtWithoutSdHash}`, verifier, getHasher, { kb: { verifier: kbVerifier } }),
       ).rejects.toThrow('Key Binding JWT sd_hash does not match the presented SD-JWT');
     });
+
+    it('rejects a stale KB-JWT by default, and accepts it when the caller opts out', async () => {
+      const presentation = await issue();
+
+      const staleKBJWT = await new SignJWT({
+        aud: AUDIENCE,
+        nonce: NONCE,
+        iat: Math.floor(Date.now() / 1000) - 3600,
+        sd_hash: hasher(presentation),
+      })
+        .setProtectedHeader({ alg: 'ES256', typ: 'kb+jwt' })
+        .sign(holderPrivateKey);
+
+      await expect(
+        verifySDJWT(`${presentation}${staleKBJWT}`, verifier, getHasher, { kb: { verifier: kbVerifier } }),
+      ).rejects.toThrow('is not within 600s of now');
+
+      const result = await verifySDJWT(`${presentation}${staleKBJWT}`, verifier, getHasher, {
+        kb: { verifier: kbVerifier, iat: false },
+      });
+      expect(result).toMatchObject({ given_name: 'Max' });
+    });
+
+    it('accepts a KB-JWT within a window widened by the caller', async () => {
+      const presentation = await issue();
+
+      const halfAnHourOld = await new SignJWT({
+        aud: AUDIENCE,
+        nonce: NONCE,
+        iat: Math.floor(Date.now() / 1000) - 1800,
+        sd_hash: hasher(presentation),
+      })
+        .setProtectedHeader({ alg: 'ES256', typ: 'kb+jwt' })
+        .sign(holderPrivateKey);
+
+      const opts = { kb: { verifier: kbVerifier, iat: { skewSeconds: 3600 } } };
+      const result = await verifySDJWT(`${presentation}${halfAnHourOld}`, verifier, getHasher, opts);
+
+      expect(result).toMatchObject({ given_name: 'Max' });
+    });
+
+    it('rejects a KB-JWT without an iat claim', async () => {
+      const presentation = await issue();
+
+      const kbjwtWithoutIat = await new SignJWT({ aud: AUDIENCE, nonce: NONCE, sd_hash: hasher(presentation) })
+        .setProtectedHeader({ alg: 'ES256', typ: 'kb+jwt' })
+        .sign(holderPrivateKey);
+
+      await expect(
+        verifySDJWT(`${presentation}${kbjwtWithoutIat}`, verifier, getHasher, { kb: { verifier: kbVerifier } }),
+      ).rejects.toThrow('Key Binding JWT has no iat claim');
+    });
   });
 
   describe('_sd_alg', () => {
