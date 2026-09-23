@@ -10,6 +10,7 @@ and this project (loosely) adheres to [Semantic Versioning](https://semver.org/s
 - fix: reject a Key Binding JWT whose typ header is not kb+jwt
 - fix: a Key Binding JWT that is present must always be verified; previously it was ignored unless `kb.verifier` was supplied
 - fix: validate the Key Binding JWT's sd_hash against the presented SD-JWT
+- fix: reject an `_sd_alg` that is not one of sha-256, sha-384, sha-512, sha3-256, sha3-384, sha3-512 instead of passing it to `getHasher`
 
 ## 1.2.4 - 2026-08-24
 

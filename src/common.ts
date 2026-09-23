@@ -16,6 +16,7 @@ import {
   decodeDisclosures,
   decodeJWT,
   isObject,
+  resolveHasher,
   unpack,
 } from './helpers.js';
 import { CompactSDJWT, DecodeSDJWT, DisclosureFrame, PackSDJWT, UnpackSDJWT } from './types.js';
@@ -77,7 +78,7 @@ export const decodeSDJWT: DecodeSDJWT = (sdJWT) => {
  */
 export const unpackSDJWT: UnpackSDJWT = async (sdjwt, disclosures, getHasher) => {
   const hashAlg = (sdjwt[SD_HASH_ALG] as string) || DEFAULT_SD_HASH_ALG;
-  const hasher = await getHasher(hashAlg);
+  const hasher = await resolveHasher(getHasher, hashAlg);
 
   const seenHashes = new Set<string>();
   disclosures.forEach((d) => {

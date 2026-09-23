@@ -1,7 +1,7 @@
 import { decodeSDJWT, unpackSDJWT } from './common.js';
 import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, KB_JWT_TYPE_HEADER, SD_HASH_ALG } from './constants.js';
 import { VerifySDJWTError } from './errors.js';
-import { decodeJWT } from './helpers.js';
+import { decodeJWT, resolveHasher } from './helpers.js';
 import { VerifySDJWT } from './types.js';
 
 /**
@@ -24,12 +24,6 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
 
   if (!getHasher || typeof getHasher !== 'function') {
     throw new VerifySDJWTError('GetHasher function is requred');
-  }
-
-  const hasher = await getHasher('sha-256');
-
-  if (!hasher || typeof hasher !== 'function') {
-    throw new VerifySDJWTError('GetHasher must return a function');
   }
 
   const { unverifiedInputSDJWT: jwt, disclosures, keyBindingJWT } = decodeSDJWT(sdjwt);
@@ -72,11 +66,7 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
 
       const presentationWithoutKBJWT = sdjwt.slice(0, sdjwt.lastIndexOf(FORMAT_SEPARATOR) + 1);
       const sdHashAlg = (jwt[SD_HASH_ALG] as string) || DEFAULT_SD_HASH_ALG;
-      const sdHasher = await getHasher(sdHashAlg);
-
-      if (typeof sdHasher !== 'function') {
-        throw new VerifySDJWTError(`GetHasher returned no hasher for '${sdHashAlg}'`);
-      }
+      const sdHasher = await resolveHasher(getHasher, sdHashAlg);
 
       const signedSdHash = decodeJWT(keyBindingJWT).payload.sd_hash;
       const presentedSdHash = sdHasher(presentationWithoutKBJWT);

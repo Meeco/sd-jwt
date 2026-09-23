@@ -1,11 +1,25 @@
-import { FORBIDDEN_KEYS_IN_DISCLOSURE, FORMAT_SEPARATOR, SD_DIGEST, SD_LIST_PREFIX } from './constants.js';
-import { CreateDecoyError, DecodeJWTError, PackSDJWTError, UnpackSDJWTError } from './errors.js';
+import {
+  FORBIDDEN_KEYS_IN_DISCLOSURE,
+  FORMAT_SEPARATOR,
+  SD_DIGEST,
+  SD_HASH_ALG,
+  SD_LIST_PREFIX,
+  SUPPORTED_SD_HASH_ALGS,
+} from './constants.js';
+import {
+  CreateDecoyError,
+  DecodeJWTError,
+  PackSDJWTError,
+  UnpackSDJWTError,
+  UnsupportedHashAlgError,
+} from './errors.js';
 import * as base64url from './runtime/base64url.js';
 import {
   CompactSDJWT,
   Disclosure,
   DisclosureClaim,
   DisclosureMap,
+  GetHasher,
   Hasher,
   SaltGenerator,
   SdDigestHashmap,
@@ -13,6 +27,22 @@ import {
 } from './types.js';
 
 const decoder = new TextDecoder('utf-8', { fatal: true });
+
+export const resolveHasher = async (getHasher: GetHasher, hashAlg: string): Promise<Hasher> => {
+  if (!SUPPORTED_SD_HASH_ALGS.includes(hashAlg?.toLowerCase())) {
+    throw new UnsupportedHashAlgError(
+      `Unsupported ${SD_HASH_ALG} '${hashAlg}', expected one of ${SUPPORTED_SD_HASH_ALGS.join(', ')}`,
+    );
+  }
+
+  const hasher = await getHasher(hashAlg);
+
+  if (typeof hasher !== 'function') {
+    throw new UnsupportedHashAlgError(`GetHasher returned no hasher for '${hashAlg}'`);
+  }
+
+  return hasher;
+};
 
 export function generateSalt(length: number): string {
   let salt = '';

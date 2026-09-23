@@ -37,12 +37,12 @@ describe('verifySDJWT', () => {
   let holderPrivateKey: any;
   let holderPublicJWK: JWK;
 
-  const issue = () =>
+  const issue = (sdAlg = 'sha-256') =>
     issueSDJWT(
       { alg: 'ES256' },
       { iss: 'https://issuer.example.com', sub: 'subject-id', given_name: 'Max', is_over_18: true },
       { _sd: ['given_name', 'is_over_18'] },
-      { hash: { alg: 'sha-256', callback: hasher }, signer, cnf: { jwk: holderPublicJWK } },
+      { hash: { alg: sdAlg, callback: hasher }, signer, cnf: { jwk: holderPublicJWK } },
     );
 
   const signKBJWT = async (presentation: string, typ = 'kb+jwt') =>
@@ -160,6 +160,27 @@ describe('verifySDJWT', () => {
       await expect(
         verifySDJWT(`${presentation}${kbjwtWithoutSdHash}`, verifier, getHasher, { kb: { verifier: kbVerifier } }),
       ).rejects.toThrow('Key Binding JWT sd_hash does not match the presented SD-JWT');
+    });
+  });
+
+  describe('_sd_alg', () => {
+    it('rejects an unregistered _sd_alg without passing it to getHasher', async () => {
+      const madeUpHashAlg = 'totally-made-up';
+      const presentation = await issue(madeUpHashAlg);
+
+      // A getHasher that ignores the algorithm it is asked for: the digests would
+      // still resolve, because they were made with SHA-256.
+      const requestedAlgs: string[] = [];
+      const getHasherIgnoringAlg = (alg: string) => {
+        requestedAlgs.push(alg);
+        return Promise.resolve(hasher);
+      };
+
+      await expect(verifySDJWT(presentation, verifier, getHasherIgnoringAlg)).rejects.toThrow(
+        `Unsupported _sd_alg '${madeUpHashAlg}'`,
+      );
+
+      expect(requestedAlgs).toEqual([]);
     });
   });
 });
