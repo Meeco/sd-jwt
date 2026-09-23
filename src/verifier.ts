@@ -2,7 +2,7 @@ import { decodeSDJWT, unpackSDJWT } from './common.js';
 import { DEFAULT_SD_HASH_ALG, FORMAT_SEPARATOR, KB_JWT_TYPE_HEADER, SD_HASH_ALG } from './constants.js';
 import { VerifySDJWTError } from './errors.js';
 import { decodeJWT, resolveHasher } from './helpers.js';
-import { VerifySDJWT } from './types.js';
+import { SDJWTPayload, VerifySDJWT } from './types.js';
 
 /**
  * Verifies base64 encoded SD JWT against issuer's public key
@@ -88,5 +88,21 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
     throw new VerifySDJWTError('Failed to verify SD-JWT');
   }
 
+  if (opts?.time !== false) {
+    assertWithinValidityPeriod(jwt, opts?.time?.skewSeconds ?? 0);
+  }
+
   return unpackSDJWT(jwt, disclosures, getHasher);
+};
+
+const assertWithinValidityPeriod = (payload: SDJWTPayload, skewSeconds: number) => {
+  const now = Math.floor(Date.now() / 1000);
+
+  if (typeof payload.exp === 'number' && payload.exp <= now - skewSeconds) {
+    throw new VerifySDJWTError(`SD-JWT expired at ${payload.exp}`);
+  }
+
+  if (typeof payload.nbf === 'number' && payload.nbf > now + skewSeconds) {
+    throw new VerifySDJWTError(`SD-JWT is not valid before ${payload.nbf}`);
+  }
 };

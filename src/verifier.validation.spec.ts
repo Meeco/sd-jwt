@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { exportJWK, generateKeyPair, importJWK, jwtVerify, SignJWT } from 'jose';
+import { compactVerify, exportJWK, generateKeyPair, importJWK, jwtVerify, SignJWT } from 'jose';
 import { base64encode, decodeJWT } from './helpers';
 import { issueSDJWT } from './issuer';
 import { ISSUER_KEYPAIR } from './test-utils/params';
@@ -181,6 +181,60 @@ describe('verifySDJWT', () => {
       );
 
       expect(requestedAlgs).toEqual([]);
+    });
+  });
+
+  describe('exp and nbf', () => {
+    // Checks the signature and nothing else, so that only the library enforces the validity period.
+    const signatureOnlyVerifier = async (jwt: string) => {
+      const issuerPublicKey = await importJWK(ISSUER_KEYPAIR.PUBLIC_KEY_JWK, 'ES256');
+      return !!(await compactVerify(jwt, issuerPublicKey));
+    };
+
+    const issueWithValidityPeriod = (claims: { exp?: number; nbf?: number }) =>
+      issueSDJWT(
+        { alg: 'ES256' },
+        { iss: 'https://issuer.example.com', sub: 'subject-id', given_name: 'Max', ...claims },
+        { _sd: ['given_name'] },
+        { hash: { alg: 'sha-256', callback: hasher }, signer },
+      );
+
+    it('rejects an expired credential even when the verifier callback ignores exp', async () => {
+      const expiredAnHourAgo = Math.floor(Date.now() / 1000) - 3600;
+      const expiredCredential = await issueWithValidityPeriod({ exp: expiredAnHourAgo });
+
+      await expect(verifySDJWT(expiredCredential, signatureOnlyVerifier, getHasher)).rejects.toThrow(
+        `SD-JWT expired at ${expiredAnHourAgo}`,
+      );
+    });
+
+    it('accepts an expired credential when the caller opts out', async () => {
+      const expiredAnHourAgo = Math.floor(Date.now() / 1000) - 3600;
+      const expiredCredential = await issueWithValidityPeriod({ exp: expiredAnHourAgo });
+
+      // For callers that report expiry themselves rather than rejecting outright.
+      const result = await verifySDJWT(expiredCredential, signatureOnlyVerifier, getHasher, { time: false });
+
+      expect(result).toMatchObject({ exp: expiredAnHourAgo, given_name: 'Max' });
+    });
+
+    it('accepts a credential that expired within the configured skew', async () => {
+      const expiredAMinuteAgo = Math.floor(Date.now() / 1000) - 60;
+      const expiredCredential = await issueWithValidityPeriod({ exp: expiredAMinuteAgo });
+
+      const opts = { time: { skewSeconds: 300 } };
+      const result = await verifySDJWT(expiredCredential, signatureOnlyVerifier, getHasher, opts);
+
+      expect(result).toMatchObject({ exp: expiredAMinuteAgo, given_name: 'Max' });
+    });
+
+    it('rejects a credential that is not valid yet', async () => {
+      const validInAnHour = Math.floor(Date.now() / 1000) + 3600;
+      const futureCredential = await issueWithValidityPeriod({ nbf: validInAnHour });
+
+      await expect(verifySDJWT(futureCredential, signatureOnlyVerifier, getHasher)).rejects.toThrow(
+        `SD-JWT is not valid before ${validInAnHour}`,
+      );
     });
   });
 });
