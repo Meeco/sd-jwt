@@ -1,8 +1,15 @@
 import crypto from 'crypto';
 import { importJWK, jwtVerify, SignJWT } from 'jose';
+import { decodeSDJWT } from './common';
 import { base64encode, decodeJWT } from './helpers';
 import { issueSDJWT } from './issuer';
-import { getExamples, getIssuerKey, loadPresentation, loadVerifiedContents } from './test-utils/helpers';
+import {
+  getExamples,
+  getIssuerKey,
+  loadKeyBindingJWT,
+  loadPresentation,
+  loadVerifiedContents,
+} from './test-utils/helpers';
 import { ISSUER_KEYPAIR } from './test-utils/params';
 import { VerifySDJWTOptions } from './types';
 import { verifySDJWT } from './verifier';
@@ -55,15 +62,22 @@ describe('verifySDJWT', () => {
   });
 
   it.each(examples)('should be able to verify %s', async (example) => {
-    const presentation = await loadPresentation(example);
+    const sdjwt = await loadPresentation(example);
     const expectedResult = await loadVerifiedContents(example);
+    const kbjwt = await loadKeyBindingJWT(example);
 
-    // Some examples carry a KB-JWT from a draft that predates sd_hash,
-    // so it can no longer be verified. Key binding is covered by
-    // verification-gaps.spec.ts; here only the Issuer-signed part is checked.
-    const presentationWithoutKBJWT = presentation.slice(0, presentation.lastIndexOf('~') + 1);
+    let opts;
+    // A presentation carrying a KB-JWT can only be verified with a KB verifier
+    // aud and nonce are only checked for the examples that ship a KB-JWT payload
+    if (decodeSDJWT(sdjwt).keyBindingJWT) {
+      opts = {
+        kb: {
+          verifier: getKbVerifier(kbjwt?.aud, kbjwt?.nonce),
+        },
+      };
+    }
 
-    const result = await verifySDJWT(presentationWithoutKBJWT, verifier, getHasher);
+    const result = await verifySDJWT(sdjwt, verifier, getHasher, opts);
     expect(result).toEqual(expectedResult);
   });
 
