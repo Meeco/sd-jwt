@@ -179,7 +179,7 @@ describe('verifySDJWT', () => {
       ).rejects.toThrow('is not within 600s of now');
 
       const result = await verifySDJWT(`${presentation}${staleKBJWT}`, verifier, getHasher, {
-        kb: { verifier: kbVerifier, iat: false },
+        kb: { verifier: kbVerifier, iat: { skip: true } },
       });
       expect(result).toMatchObject({ given_name: 'Max' });
     });

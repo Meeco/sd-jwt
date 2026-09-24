@@ -83,7 +83,7 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
         throw new VerifySDJWTError('Key Binding JWT sd_hash does not match the presented SD-JWT');
       }
 
-      if (kb.iat !== false) {
+      if (!kb.iat?.skip) {
         assertFreshKeyBindingJWT(kbPayload, kb.iat?.skewSeconds ?? DEFAULT_KB_IAT_SKEW_SECONDS);
       }
     }

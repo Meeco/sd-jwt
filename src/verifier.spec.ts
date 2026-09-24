@@ -74,7 +74,7 @@ describe('verifySDJWT', () => {
         kb: {
           verifier: getKbVerifier(kbjwt?.aud, kbjwt?.nonce),
           // These KB-JWTs were signed once and stored, so their iat is always stale.
-          iat: false as const,
+          iat: { skip: true as const },
         },
       };
     }

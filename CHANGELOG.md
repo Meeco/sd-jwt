@@ -12,7 +12,7 @@ and this project (loosely) adheres to [Semantic Versioning](https://semver.org/s
 - fix: validate the Key Binding JWT's sd_hash against the presented SD-JWT
 - fix: reject an `_sd_alg` that is not one of sha-256, sha-384, sha-512, sha3-256, sha3-384, sha3-512 instead of passing it to `getHasher`
 - fix: enforce `exp` and `nbf`; pass `{ time: { skip: true } }` to leave the validity period to the verifier callback, or `{ time: { skewSeconds } }` to allow for clock drift
-- fix: check the Key Binding JWT's `iat`, by default within 10 minutes of now; pass `{ kb: { iat: { skewSeconds } } }` for a different window, or `{ kb: { iat: false } }` to accept a proof of possession of any age
+- fix: check the Key Binding JWT's `iat`, by default within 10 minutes of now; pass `{ kb: { iat: { skewSeconds } } }` for a different window, or `{ kb: { iat: { skip: true } } }` to accept a proof of possession of any age
 
 ## 1.2.4 - 2026-08-24
 
