@@ -213,7 +213,7 @@ describe('verifySDJWT', () => {
       const expiredCredential = await issueWithValidityPeriod({ exp: expiredAnHourAgo });
 
       // For callers that report expiry themselves rather than rejecting outright.
-      const result = await verifySDJWT(expiredCredential, signatureOnlyVerifier, getHasher, { time: false });
+      const result = await verifySDJWT(expiredCredential, signatureOnlyVerifier, getHasher, { time: { skip: true } });
 
       expect(result).toMatchObject({ exp: expiredAnHourAgo, given_name: 'Max' });
     });

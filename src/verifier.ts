@@ -88,7 +88,7 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
     throw new VerifySDJWTError('Failed to verify SD-JWT');
   }
 
-  if (opts?.time !== false) {
+  if (!opts?.time?.skip) {
     assertWithinValidityPeriod(jwt, opts?.time?.skewSeconds ?? 0);
   }
 

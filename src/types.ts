@@ -209,7 +209,10 @@ export interface IssueSDJWTOptions {
 }
 
 export interface VerifySDJWTOptions {
-  time?: false | { skewSeconds?: number };
+  time?: {
+    skip?: true;
+    skewSeconds?: number;
+  };
   kb?: {
     verifier?: KeyBindingVerifier;
   };
