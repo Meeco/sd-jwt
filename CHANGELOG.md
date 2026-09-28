@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (loosely) adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.3.0 - UNRELEASED
+## 1.3.0 - 2026-09-28
 
 - fix: reject a Key Binding JWT whose typ header is not kb+jwt
 - fix: a Key Binding JWT that is present must always be verified; previously it was ignored unless `kb.verifier` was supplied
