@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { importJWK, jwtVerify, SignJWT } from 'jose';
+import { decodeSDJWT } from './common';
 import { base64encode, decodeJWT } from './helpers';
 import { issueSDJWT } from './issuer';
 import {
@@ -66,14 +67,18 @@ describe('verifySDJWT', () => {
     const kbjwt = await loadKeyBindingJWT(example);
 
     let opts;
-    const kbjwtExist = !!kbjwt && typeof kbjwt === 'object' && Object.keys(kbjwt).length > 0;
-    if (expectedResult.cnf && kbjwtExist) {
+    // A presentation carrying a KB-JWT can only be verified with a KB verifier
+    // aud and nonce are only checked for the examples that ship a KB-JWT payload
+    if (decodeSDJWT(sdjwt).keyBindingJWT) {
       opts = {
         kb: {
-          verifier: getKbVerifier(kbjwt.aud, kbjwt.nonce),
+          verifier: getKbVerifier(kbjwt?.aud, kbjwt?.nonce),
+          // These KB-JWTs were signed once and stored, so their iat is always stale.
+          iat: { skip: true as const },
         },
       };
     }
+
     const result = await verifySDJWT(sdjwt, verifier, getHasher, opts);
     expect(result).toEqual(expectedResult);
   });

@@ -51,3 +51,9 @@ export class CreateDecoyError extends SDJWTError {
     super(message);
   }
 }
+
+export class UnsupportedHashAlgError extends SDJWTError {
+  constructor(message: any) {
+    super(message);
+  }
+}

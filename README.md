@@ -394,6 +394,40 @@ Breaking that down:
 
   `Kx9QzP2mYtNc4Rvw` is this disclosure's own salt — every disclosure gets a fresh independent salt.
 
+## Key Binding JWT
+
+A compact SD-JWT has one more optional segment, after the last `~`:
+
+```
+<jwt>~<disclosure 1>~...~<disclosure N>~<kb-jwt>
+```
+
+That last segment is the **Key Binding JWT**: the holder's proof that they control the key the issuer
+embedded in the credential as `cnf.jwk` (the `cnf` option of [`issueSDJWT`](#issuesdjwt-example)). The
+examples above end in a bare `~`, which means the segment is empty — no KB-JWT.
+
+This library does not create KB-JWTs; that is the holder's side, and it is up to you. It is a JWT signed
+with the holder's private key, with `typ: "kb+jwt"` and four claims:
+
+```js
+const keyBindingJWT = await new SignJWT({
+  aud: 'https://verifier.example.com', // who the presentation is for
+  nonce: 'n-0S6_WzA2Mj', // the nonce from that verifier's request
+  iat: Math.floor(Date.now() / 1000), // when this proof was created
+  sd_hash: hasher(presentation), // see below
+})
+  .setProtectedHeader({ alg: 'ES256', typ: 'kb+jwt' })
+  .sign(holderPrivateKey);
+
+const sdJwtKb = `${presentation}${keyBindingJWT}`; // the presentation already ends with '~'
+```
+
+`sd_hash` is what binds the proof to the content shown. It is the digest — using the credential's
+`_sd_alg` — of the presentation string **up to and including the final separator**, that is the
+Issuer-signed JWT plus exactly the disclosures being presented, and nothing after the last `~`. Hiding a
+disclosure or adding one back changes that string, so a KB-JWT signed over a different selection no
+longer matches and `verifySDJWT` rejects the presentation.
+
 ## verifySDJWT Example
 
 The `verifySDJWT` function takes the following arguments and returns the SD-JWT payload with all disclosed claims resolved:
@@ -402,7 +436,11 @@ The `verifySDJWT` function takes the following arguments and returns the SD-JWT 
 - **`verifier`** *(required)* — the verifier function used to check the JWT signature (see [BYOC](#byoc-bring-your-own-crypto) above).
 - **`getHasher`** *(required)* — a function that, given the `_sd_alg` from the SD-JWT payload, returns the matching `hasher` used to resolve `_sd` digests.
 - **`opts`** — an options object:
-  - **`kb.verifier`** *(optional)* — a Keybinding Verifier function that can verify the embedded holder key against the KB-JWT.
+  - **`kb.verifier`** *(optional)* — a Keybinding Verifier function that verifies the KB-JWT's signature against the holder key embedded in the credential's `cnf`. Supplying it makes key binding mandatory: a presentation without a KB-JWT is then rejected, and so is a KB-JWT when no verifier is supplied.
+
+    **Your callback must also check `aud` and `nonce`** against the values of the request you issued — the library cannot, since it never sees them. Without that check a presentation captured elsewhere can be replayed against you. Everything else about the KB-JWT is verified by the library: its `typ` header, its `sd_hash` against the presented SD-JWT, and its `iat` (see below).
+  - **`kb.iat`** *(optional)* — how fresh the KB-JWT must be. Checked by default, within 10 minutes of now; pass `{ skewSeconds }` for a different window, or `{ skip: true }` to accept a proof of possession of any age.
+  - **`time`** *(optional)* — validation of the credential's `exp` and `nbf`. Enabled by default with no clock skew; pass `{ skewSeconds }` to allow for drift, or `{ skip: true }` to leave the validity period to your `verifier` callback.
 
 Example using the `jose` library for the verifier function and `crypto` for the hasher.
 
@@ -426,9 +464,17 @@ const verifier = async (jwt) => {
   return jwtVerify(jwt, key);
 };
 
-const keyBindingVerifier = (kbjwt, holderJWK) => {
-  // check against kb-jwt.aud && kb-jwt.nonce
-  const { header } = decodeJWT(kbjwt);
+const keyBindingVerifier = async (kbjwt, holderJWK) => {
+  const { header, payload } = decodeJWT(kbjwt);
+
+  // Required: the library does not know which request this presentation answers.
+  if (payload.aud !== expectedAudience) {
+    throw new Error('aud mismatch');
+  }
+  if (payload.nonce !== expectedNonce) {
+    throw new Error('nonce mismatch');
+  }
+
   const holderKey = await importJWK(holderJWK, header.alg);
   const verifiedKbJWT = await jwtVerify(kbjwt, holderKey);
   return !!verifiedKbJWT;

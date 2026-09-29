@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (loosely) adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.3.0 - 2026-09-28
+
+- fix: reject a Key Binding JWT whose typ header is not kb+jwt
+- fix: a Key Binding JWT that is present must always be verified; previously it was ignored unless `kb.verifier` was supplied
+- fix: validate the Key Binding JWT's sd_hash against the presented SD-JWT
+- fix: reject an `_sd_alg` that is not one of sha-256, sha-384, sha-512, sha3-256, sha3-384, sha3-512 instead of passing it to `getHasher`
+- fix: enforce `exp` and `nbf`; pass `{ time: { skip: true } }` to leave the validity period to the verifier callback, or `{ time: { skewSeconds } }` to allow for clock drift
+- fix: check the Key Binding JWT's `iat`, by default within 10 minutes of now; pass `{ kb: { iat: { skewSeconds } } }` for a different window, or `{ kb: { iat: { skip: true } } }` to accept a proof of possession of any age
+
 ## 1.2.4 - 2026-08-24
 
 ### Security

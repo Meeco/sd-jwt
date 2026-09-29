@@ -1,7 +1,14 @@
 import { decodeSDJWT, unpackSDJWT } from './common.js';
-import { FORMAT_SEPARATOR } from './constants.js';
+import {
+  DEFAULT_KB_IAT_SKEW_SECONDS,
+  DEFAULT_SD_HASH_ALG,
+  FORMAT_SEPARATOR,
+  KB_JWT_TYPE_HEADER,
+  SD_HASH_ALG,
+} from './constants.js';
 import { VerifySDJWTError } from './errors.js';
-import { VerifySDJWT } from './types.js';
+import { decodeJWT, resolveHasher } from './helpers.js';
+import { JWTPayload, SDJWTPayload, VerifySDJWT } from './types.js';
 
 /**
  * Verifies base64 encoded SD JWT against issuer's public key
@@ -25,16 +32,15 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
     throw new VerifySDJWTError('GetHasher function is requred');
   }
 
-  const hasher = await getHasher('sha-256');
-
-  if (!hasher || typeof hasher !== 'function') {
-    throw new VerifySDJWTError('GetHasher must return a function');
-  }
-
   const { unverifiedInputSDJWT: jwt, disclosures, keyBindingJWT } = decodeSDJWT(sdjwt);
 
-  if (opts?.kb) {
-    const kb = opts.kb;
+  const kb = opts?.kb;
+
+  if (keyBindingJWT && !kb?.verifier) {
+    throw new VerifySDJWTError('Key Binding JWT found but no KB JWT verifier function was provided');
+  }
+
+  if (kb) {
     const holderPublicKey = jwt.cnf?.jwk;
 
     if (!holderPublicKey) {
@@ -50,6 +56,13 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
         throw new VerifySDJWTError('No Key Binding JWT found');
       }
 
+      const { header: kbHeader, payload: kbPayload } = decodeJWT(keyBindingJWT);
+
+      const { typ } = kbHeader;
+      if (typ !== KB_JWT_TYPE_HEADER) {
+        throw new VerifySDJWTError(`Invalid Key Binding JWT: expected typ '${KB_JWT_TYPE_HEADER}', received '${typ}'`);
+      }
+
       try {
         const verifiedKBJWT = await kb.verifier(keyBindingJWT, holderPublicKey);
         if (!verifiedKBJWT) {
@@ -57,6 +70,21 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
         }
       } catch (_e) {
         throw new VerifySDJWTError('Failed to verify Key Binding JWT');
+      }
+
+      const presentationWithoutKBJWT = sdjwt.slice(0, sdjwt.lastIndexOf(FORMAT_SEPARATOR) + 1);
+      const sdHashAlg = (jwt[SD_HASH_ALG] as string) || DEFAULT_SD_HASH_ALG;
+      const sdHasher = await resolveHasher(getHasher, sdHashAlg);
+
+      const signedSdHash = kbPayload.sd_hash;
+      const presentedSdHash = sdHasher(presentationWithoutKBJWT);
+
+      if (signedSdHash !== presentedSdHash) {
+        throw new VerifySDJWTError('Key Binding JWT sd_hash does not match the presented SD-JWT');
+      }
+
+      if (!kb.iat?.skip) {
+        assertFreshKeyBindingJWT(kbPayload, kb.iat?.skewSeconds ?? DEFAULT_KB_IAT_SKEW_SECONDS);
       }
     }
   }
@@ -72,5 +100,33 @@ export const verifySDJWT: VerifySDJWT = async (sdjwt, verifier, getHasher, opts)
     throw new VerifySDJWTError('Failed to verify SD-JWT');
   }
 
+  if (!opts?.time?.skip) {
+    assertWithinValidityPeriod(jwt, opts?.time?.skewSeconds ?? 0);
+  }
+
   return unpackSDJWT(jwt, disclosures, getHasher);
+};
+
+const assertFreshKeyBindingJWT = (payload: JWTPayload, iatSkewSeconds: number) => {
+  if (typeof payload.iat !== 'number') {
+    throw new VerifySDJWTError('Key Binding JWT has no iat claim');
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+
+  if (payload.iat < now - iatSkewSeconds || payload.iat > now + iatSkewSeconds) {
+    throw new VerifySDJWTError(`Key Binding JWT iat ${payload.iat} is not within ${iatSkewSeconds}s of now`);
+  }
+};
+
+const assertWithinValidityPeriod = (payload: SDJWTPayload, skewSeconds: number) => {
+  const now = Math.floor(Date.now() / 1000);
+
+  if (typeof payload.exp === 'number' && payload.exp <= now - skewSeconds) {
+    throw new VerifySDJWTError(`SD-JWT expired at ${payload.exp}`);
+  }
+
+  if (typeof payload.nbf === 'number' && payload.nbf > now + skewSeconds) {
+    throw new VerifySDJWTError(`SD-JWT is not valid before ${payload.nbf}`);
+  }
 };
