@@ -434,7 +434,7 @@ The `verifySDJWT` function takes the following arguments and returns the SD-JWT 
 
 - **`sdjwt`** — the compact, combined SD-JWT string to verify (including optional disclosures & KB-JWT) — see the example produced by `issueSDJWT` in the [previous section](#issuesdjwt-example).
 - **`verifier`** *(required)* — the verifier function used to check the JWT signature (see [BYOC](#byoc-bring-your-own-crypto) above).
-- **`getHasher`** *(required)* — a function that, given the `_sd_alg` from the SD-JWT payload, returns the matching `hasher` used to resolve `_sd` digests.
+- **`getHasher`** *(required)* — a function that, given the `_sd_alg` from the SD-JWT payload, returns the matching `hasher` used to resolve `_sd` digests. It is only ever called with `sha-256`, `sha-384`, `sha-512`, `sha3-256`, `sha3-384` or `sha3-512`: any other `_sd_alg` is rejected, except Node's names `sha256`, `sha384` and `sha512`, which are accepted and passed on under their IANA name.
 - **`opts`** — an options object:
   - **`kb.verifier`** *(optional)* — a Keybinding Verifier function that verifies the KB-JWT's signature against the holder key embedded in the credential's `cnf`. Supplying it makes key binding mandatory: a presentation without a KB-JWT is then rejected, and so is a KB-JWT when no verifier is supplied.
 

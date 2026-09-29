@@ -234,6 +234,21 @@ describe('verifySDJWT', () => {
 
       expect(requestedAlgs).toEqual([]);
     });
+
+    it("accepts Node's name 'sha256' and asks getHasher for the IANA name 'sha-256'", async () => {
+      const presentation = await issue('sha256');
+
+      const requestedAlgs: string[] = [];
+      const getHasherRecordingAlg = (alg: string) => {
+        requestedAlgs.push(alg);
+        return Promise.resolve(hasher);
+      };
+
+      const result = await verifySDJWT(presentation, verifier, getHasherRecordingAlg);
+
+      expect(result).toMatchObject({ given_name: 'Max', is_over_18: true });
+      expect(requestedAlgs).toEqual(['sha-256']);
+    });
   });
 
   describe('exp and nbf', () => {
