@@ -3,6 +3,7 @@ import {
   FORMAT_SEPARATOR,
   SD_DIGEST,
   SD_HASH_ALG,
+  SD_HASH_ALG_ALIASES,
   SD_LIST_PREFIX,
   SUPPORTED_SD_HASH_ALGS,
 } from './constants.js';
@@ -29,16 +30,19 @@ import {
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
 export const resolveHasher = async (getHasher: GetHasher, hashAlg: string): Promise<Hasher> => {
-  if (!SUPPORTED_SD_HASH_ALGS.includes(hashAlg?.toLowerCase())) {
+  const alias = SD_HASH_ALG_ALIASES.get(hashAlg?.toLowerCase());
+  const resolvedAlg = alias ?? hashAlg;
+
+  if (!SUPPORTED_SD_HASH_ALGS.includes(resolvedAlg?.toLowerCase())) {
     throw new UnsupportedHashAlgError(
       `Unsupported ${SD_HASH_ALG} '${hashAlg}', expected one of ${SUPPORTED_SD_HASH_ALGS.join(', ')}`,
     );
   }
 
-  const hasher = await getHasher(hashAlg);
+  const hasher = await getHasher(resolvedAlg);
 
   if (typeof hasher !== 'function') {
-    throw new UnsupportedHashAlgError(`GetHasher returned no hasher for '${hashAlg}'`);
+    throw new UnsupportedHashAlgError(`GetHasher returned no hasher for '${resolvedAlg}'`);
   }
 
   return hasher;
