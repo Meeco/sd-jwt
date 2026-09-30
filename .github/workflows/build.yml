@@ -22,7 +22,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/hydrogen # 18
+          node-version: lts/krypton # 24
           cache: 'npm'
           check-latest: true
       - run: npm ci

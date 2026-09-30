@@ -17,7 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         node-version:
-          - lts/hydrogen # 18
+          - lts/jod # 22
+          - lts/krypton # 24
           - current
 
     runs-on: ubuntu-latest

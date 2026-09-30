@@ -27,9 +27,8 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/hydrogen # 18
+          node-version: lts/krypton # 24
           registry-url: https://registry.npmjs.org
-          always-auth: true
       - name: Load cached dist
         uses: actions/cache@v4
         id: dist
@@ -40,5 +39,3 @@ jobs:
       - name: Prepare distribution
         run: node tools/publish-${{ matrix.prepare-script }}
       - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
