@@ -77,5 +77,10 @@
     "@istanbuljs/load-nyc-config": {
       "js-yaml": "^4.1.0"
     }
+  },
+  "allowScripts": {
+    "esbuild": false,
+    "@parcel/watcher": false,
+    "unrs-resolver": false
   }
 }
