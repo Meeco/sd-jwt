@@ -6,7 +6,6 @@ export const ISSUER_PUBLIC_KEY = {
   x: 'b28d4MwZMjw8-00CG4xfnn9SLMVMM19SlqZpVb_uNtQ',
   y: 'Xv5zWwuoaTgdS6hV43yI6gBwTnjukmFQQnJ_kCxzqk8',
   crv: 'P-256',
-  d: 'Ur2bNKuBPOrAaxsRnbSH6hIhmNTxSGXshDSUD1a1y7g',
 };
 
 /**

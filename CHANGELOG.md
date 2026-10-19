@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (loosely) adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.3.2 - 2026-10-15
+
+Development tooling only; the published package has no runtime changes.
+
+### Security
+
+- Fixed all `npm audit` vulnerabilities in devDependencies: handlebars 4.7.9 → 4.7.10 and shell-quote 1.10.0 → 1.12.0 (both critical), and removed sprintf-js (moderate, no patched version) by overriding `@istanbuljs/load-nyc-config`'s js-yaml to v4.
+- Denied the install scripts of esbuild, @parcel/watcher and unrs-resolver via `allowScripts`; they only act as fallbacks for missing prebuilt binaries.
+
+### Changed
+
+- Upgraded `jose` (used in tests) from 5.10.0 to 6.2.12. jose 6 is ESM-only, so Jest now transforms it to CommonJS via ts-jest (`tsconfig/jest.json`). The test issuer public key no longer carries the private `d` parameter, which jose 6 rejects for verification.
+- Updated devDependencies within their ranges: eslint 10.12.0, @typescript-eslint 8.71.2, jest 30.5.2, ts-jest 29.4.15, prettier 3.9.10, eslint-plugin-prettier 5.5.7, globals 17.13.0.
+
 ## 1.3.1 - 2026-09-28
 
 - fix: accept Node's hash names `sha256`, `sha384` and `sha512` as `_sd_alg`, as aliases of `sha-256`, `sha-384` and `sha-512`. 1.3.0 rejected them, breaking credentials issued with them.
